@@ -60,7 +60,7 @@ function loadPrimaryData() {
 
       populateImageAndWikipediaData()
         .then(() => {
-          updateFeatureCounts();      
+          applyIntersectionFilter(true);      
           
           // KUNCI PERBAIKAN: Hapus ingatan panel yang telanjur terbuat kosong
           Object.values(Records).forEach(r => r.panelElem = undefined);
@@ -70,7 +70,7 @@ function loadPrimaryData() {
         })
         .catch(error => {
           console.warn("Gagal mengambil data Gambar/Wikipedia dari server.", error);
-          updateFeatureCounts();      
+          applyIntersectionFilter(true);      
           
           // Tetap hapus ingatan dan render ulang sebagai cadangan jika terjadi error
           Object.values(Records).forEach(r => r.panelElem = undefined);
