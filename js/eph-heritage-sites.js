@@ -812,11 +812,9 @@ function renderHistoricalImagesInPanel(qid) {
     block += generateFigure(imgObj.file);
     
     // Cetak teks keterangannya di bawah foto
-    // Kita gunakan .trim() untuk memastikan teksnya benar-benar ada, bukan sekadar spasi kosong
     if (imgObj.caption && imgObj.caption.trim() !== '') {
       block += `<div class="article main-text"><p>${imgObj.caption}</p></div>`;
     } else {
-      // Jika keterangan kosong, tampilkan pesan peringatan
       block += `<div class="article main-text nodata"><p>Belum ada keterangan foto di Wikidata</p></div>`;
     }
     
@@ -840,9 +838,9 @@ function renderHistoricalImagesInPanel(qid) {
 
   // Finalisasi penempelan ke layar
   if (html !== '') {
-    // 3. Buat tautan sunting untuk Galeri
-    let wikiUrlUtama = `https://www.wikidata.org/wiki/${qid}`;
-    let tautanSuntingGaleri = `<a href="${wikiUrlUtama}" target="_blank" class="sunting-link" title="Sunting data galeri di Wikidata" aria-label="Sunting data galeri di Wikidata"></a>`;
+    // 3. Buat tautan sunting untuk Galeri dengan tambahan #P18
+    let wikiUrlGaleri = `https://www.wikidata.org/wiki/${qid}#P18`;
+    let tautanSuntingGaleri = `<a href="${wikiUrlGaleri}" target="_blank" class="sunting-link" title="Sunting data galeri di Wikidata" aria-label="Sunting data galeri di Wikidata"></a>`;
     
     // 4. Masukkan tautan sunting tersebut ke dalam tag <h2>
     container.innerHTML = `<h2 style="margin-bottom:15px;">Galeri ${tautanSuntingGaleri}</h2>` + html;
