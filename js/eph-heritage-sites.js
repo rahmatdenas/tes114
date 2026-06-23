@@ -356,6 +356,25 @@ var activeFeatures = new Set();
 var currentSearchQuery = '';
 
 function generateFilterSelect() {
+  // =================================================================
+  // KUNCI PERBAIKAN: RESET PAKSA VARIABEL & UI SETIAP KALI DATA BARU
+  // =================================================================
+  currentRegionFilter = 'all';
+  currentUsiaFilter = 'all';
+  activeFeatures.clear();
+  currentSearchQuery = '';
+
+  let selectKombinasi = document.getElementById('filter-sort-kombinasi');
+  if (selectKombinasi) selectKombinasi.value = 'default';
+
+  let searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.value = '';
+
+  let btnAll = document.getElementById('btn-all');
+  if (btnAll) btnAll.classList.add('active');
+  document.querySelectorAll('.feat-btn:not(#btn-all)').forEach(b => b.classList.remove('active'));
+  // =================================================================
+
   let selectRegion = document.getElementById('filter-region');
 
   // Setiap kali data ditarik, kita perbarui opsi provinsi di dropdown
@@ -374,7 +393,7 @@ function generateFilterSelect() {
 
   applyIntersectionFilter(true);
   
-  // === KUNCI PERBAIKAN: PASANG EVENT LISTENER HANYA 1 KALI ===
+  // PASANG EVENT LISTENER HANYA 1 KALI
   if (!isFilterEventAttached) {
     
     selectRegion.addEventListener('change', function() {
@@ -382,7 +401,6 @@ function generateFilterSelect() {
       applyIntersectionFilter();
     });
 
-    let selectKombinasi = document.getElementById('filter-sort-kombinasi');
     if (selectKombinasi) {
       selectKombinasi.addEventListener('change', function() {
         let pilihan = this.value;
@@ -401,28 +419,26 @@ function generateFilterSelect() {
       });
     }
 
-    let btnAll = document.getElementById('btn-all');
-    let featButtons = document.querySelectorAll('.feat-btn:not(#btn-all)');
+    if (btnAll) {
+      btnAll.addEventListener('click', function() {
+        activeFeatures.clear();
+        btnAll.classList.add('active');
+        document.querySelectorAll('.feat-btn:not(#btn-all)').forEach(b => b.classList.remove('active'));
 
-    btnAll.addEventListener('click', function() {
-      activeFeatures.clear();
-      btnAll.classList.add('active');
-      featButtons.forEach(b => b.classList.remove('active'));
+        currentRegionFilter = 'all';
+        if (selectRegion) selectRegion.value = 'all';
 
-      currentRegionFilter = 'all';
-      if (selectRegion) selectRegion.value = 'all';
+        currentUsiaFilter = 'all';
+        if (selectKombinasi) selectKombinasi.value = 'default';
 
-      currentUsiaFilter = 'all';
-      if (selectKombinasi) selectKombinasi.value = 'default';
+        currentSearchQuery = '';
+        if (searchInput) searchInput.value = '';
 
-      currentSearchQuery = '';
-      let searchInput = document.getElementById('search-input');
-      if (searchInput) searchInput.value = '';
+        applyIntersectionFilter();
+      });
+    }
 
-      applyIntersectionFilter();
-    });
-
-    featButtons.forEach(btn => {
+    document.querySelectorAll('.feat-btn:not(#btn-all)').forEach(btn => {
       btn.addEventListener('click', function() {
         let filterType = this.getAttribute('data-filter');
 
@@ -435,16 +451,15 @@ function generateFilterSelect() {
         }
 
         if (activeFeatures.size === 0) {
-          btnAll.classList.add('active');
+          if (btnAll) btnAll.classList.add('active');
         } else {
-          btnAll.classList.remove('active');
+          if (btnAll) btnAll.classList.remove('active');
         }
 
         applyIntersectionFilter();
       });
     });
 
-    let searchInput = document.getElementById('search-input');
     if (searchInput) {
       searchInput.addEventListener('input', function() {
         currentSearchQuery = this.value.toLowerCase();
@@ -452,7 +467,7 @@ function generateFilterSelect() {
       });
     }
 
-    // Kunci pintunya agar fungsi ini tidak ditambahkan lagi di tarikan data berikutnya
+    // Kunci pintunya agar event listener ini tidak ditambahkan berulang kali
     isFilterEventAttached = true; 
   }
 }
