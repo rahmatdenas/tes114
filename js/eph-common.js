@@ -205,9 +205,12 @@ function processHashChange() {
     displayPanelContent('kontrib'); 
   }
   else {
-    // === LOGIKA UX CERDAS UNTUK HALAMAN DAFTAR ===
+    // === KUNCI PERBAIKAN TUNTAS ===
+    // Tangkap baik hash kosong ('') maupun 'index' sebagai Halaman Daftar
+    let isIndexPage = (fragment === '' || fragment === 'index');
+
     if (!PrimaryDataIsLoaded) {
-      if (fragment === '') {
+      if (isIndexPage) {
         document.title = 'Daftar – ' + BASE_TITLE;
         displayPanelContent('index');
 
@@ -215,7 +218,6 @@ function processHashChange() {
         if (indexList) {
           
           if (isFetching) {
-            // Skenario 1: Tombol Cari sudah ditekan, sedang berjuang narik data
             indexList.innerHTML = `
               <div style="padding: 40px 20px; text-align: center; line-height: 1.6;">
                 <h3 style="margin-bottom: 10px; color: #333;">Sedang Menarik Data...</h3>
@@ -224,7 +226,6 @@ function processHashChange() {
               </div>
             `;
           } else {
-            // Skenario 2: Web baru dibuka, pengguna iseng langsung klik tab "Daftar"
             indexList.innerHTML = `
               <div style="padding: 40px 20px; text-align: center; line-height: 1.6;">
                 <h3 style="margin-bottom: 10px; color: #333;">Data Belum Ditarik</h3>
@@ -236,13 +237,13 @@ function processHashChange() {
           
         }
       } else {
-        // Jika iseng ngetik link spesifik (#Q123) tapi data belum ditarik
+        // Lempar ke Landing HANYA jika yang diketik benar-benar link spesifik (contoh: #Q123)
         window.location.hash = 'landing';
       }
     } 
     else {
-      // Normal: Data sudah ditarik dan siap disajikan
-      if (fragment === '' || !(fragment in Records)) {
+      // Normal: Data sudah ditarik
+      if (isIndexPage || !(fragment in Records)) {
         window.location.hash = '';  
         document.title = BASE_TITLE;
         displayPanelContent('index');
