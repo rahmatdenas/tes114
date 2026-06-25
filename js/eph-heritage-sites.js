@@ -120,36 +120,22 @@ function populateProvinceTypesData() {
   // 1. Tentukan kategori dan simpan di ingatan global
   currentKategoriUtama = tentukanKategoriKueri(inputTxt);
   
-  // 2. Ambil kueri dari Kamus. Jika 'alam', pinjam kueri 'general'
+  // 2. Ambil kueri dari Kamus. Jika 'alam', pinjam kueri 'general' (karena butuh P131+ juga)
   let namaKueri = (currentKategoriUtama === 'alam') ? 'general' : currentKategoriUtama;
   let baseQuery = KUMPULAN_KUERI_0[namaKueri];
   
-  // 3. Masukkan Jenis Entitas (Gunung, Masjid, dll)
-  let dynamicQuery = baseQuery.replace('<PLACEHOLDER_JENIS>', inputTxt);
-
-  // 4. Operasi Jantung untuk Wilayah
+  // 3. Suntikkan Dropdown Wilayah
+  let wilayahClause = '';
   if (provInput === 'all') {
-    // Mode pencarian seluruh Indonesia
-    let wilayahClause = '{ SELECT ?provinsi WHERE { ?provinsi wdt:P31 wd:Q5098 . } }';
-    dynamicQuery = dynamicQuery.replace('<PLACEHOLDER_WILAYAH>', wilayahClause);
+    wilayahClause = '{ SELECT ?provinsi WHERE { ?provinsi wdt:P31 wd:Q5098 . } }';
   } else {
-    // Mode pencarian Provinsi Spesifik
-    if (currentKategoriUtama === 'wilayah') {
-      // Jika mencari Kabupaten/Kota itu sendiri, Ikat Langsung!
-      dynamicQuery = dynamicQuery.replace('<PLACEHOLDER_WILAYAH>', `BIND(${provInput} AS ?provinsi)`);
-    } else {
-      // UNTUK GUNUNG, BANGUNAN, PERS:
-      // A. Kosongkan placeholder atas agar terhindar dari Timeout
-      dynamicQuery = dynamicQuery.replace('<PLACEHOLDER_WILAYAH>', '');
-      
-      // B. Suntikkan Jangkar Ganda persis di tempat lokasinya diproses!
-      // Ini memastikan mesin mencari Gunung DULU, baru mencari Kabupatennya.
-      dynamicQuery = dynamicQuery.replace(
-        'wdt:P131+ ?provinsi', 
-        `wdt:P131+ ${provInput} ; wdt:P131+ ?provinsi . ?provinsi wdt:P131 ${provInput}`
-      );
-    }
+wilayahClause = `{ SELECT ?provinsi WHERE { ?provinsi wdt:P131 ${provInput} . } }`;
   }
+  
+  // 4. Rakit kueri final
+  let dynamicQuery = baseQuery
+    .replace('<PLACEHOLDER_WILAYAH>', wilayahClause)
+    .replace('<PLACEHOLDER_JENIS>', inputTxt);
 
   return queryWdqsThenProcess(
     dynamicQuery,
