@@ -102,10 +102,13 @@ var currentKategoriUtama = 'general';
 
 // === UBAH FUNGSI DETEKTIF MENJADI SEPERTI INI ===
 function tentukanKategoriKueri(inputTxt) {
-  // Tambahan untuk tokoh, publikasi, dan fiksi
   if (inputTxt.includes('Q5')) return 'tokoh';
+  
+  // Karena input publikasi sepaket mengandung Q47461344, kita cek ini lebih dulu.
+  // Jika inputnya "Q47461344 Q7725634", program akan langsung me-return 'publikasi' dan berhenti di sini.
   if (inputTxt.includes('Q47461344')) return 'publikasi';
-  // Jika Q7725634 berbagi antara fiksi/publikasi, kita patok sebagai fiksi sesuai input Anda
+  
+  // Jika input HANYA "Q7725634" (tanpa Q47461344), program akan lolos dari cek di atas dan masuk ke sini.
   if (inputTxt.includes('Q7725634')) return 'fiksi'; 
   
   if (inputTxt.includes('Q11032') || inputTxt.includes('Q41298')) return 'pers';
@@ -118,6 +121,7 @@ function tentukanKategoriKueri(inputTxt) {
   // Wilayah Administratif otomatis akan bermuara di sini
   return 'general';
 }
+
 function populateProvinceTypesData() {
   let inputTxt = document.getElementById('jenis-input').value.trim();
   let provInput = document.getElementById('provinsi-input').value;
