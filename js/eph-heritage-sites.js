@@ -102,6 +102,12 @@ var currentKategoriUtama = 'general';
 
 // === UBAH FUNGSI DETEKTIF MENJADI SEPERTI INI ===
 function tentukanKategoriKueri(inputTxt) {
+  // Tambahan untuk tokoh, publikasi, dan fiksi
+  if (inputTxt.includes('Q5')) return 'tokoh';
+  if (inputTxt.includes('Q47461344')) return 'publikasi';
+  // Jika Q7725634 berbagi antara fiksi/publikasi, kita patok sebagai fiksi sesuai input Anda
+  if (inputTxt.includes('Q7725634')) return 'fiksi'; 
+  
   if (inputTxt.includes('Q11032') || inputTxt.includes('Q41298')) return 'pers';
   
   // Daftar Q-ID Entitas Alam & Peristiwa
@@ -112,7 +118,6 @@ function tentukanKategoriKueri(inputTxt) {
   // Wilayah Administratif otomatis akan bermuara di sini
   return 'general';
 }
-
 function populateProvinceTypesData() {
   let inputTxt = document.getElementById('jenis-input').value.trim();
   let provInput = document.getElementById('provinsi-input').value;
@@ -727,11 +732,15 @@ function generateRecordDetails(qid) {
   let tautanSuntingRingkasan = `<a href="${wikiUrlUtama}" target="_blank" class="sunting-link" title="Sunting data di Wikidata" aria-label="Sunting data di Wikidata"></a>`;
 
 // === PERBAIKAN: LOGIKA JUDUL YANG LEBIH RAPI DAN BERSIH ===
-  let teksJudul = 'Informasi';
+let teksJudul = 'Informasi';
   if (currentKategoriUtama === 'alam') {
     teksJudul = 'Informasi Geografis';
-  } else if (currentKategoriUtama === 'pers') {
+  } else if (currentKategoriUtama === 'pers' || currentKategoriUtama === 'publikasi') {
     teksJudul = 'Informasi Publikasi';
+  } else if (currentKategoriUtama === 'fiksi') {
+    teksJudul = 'Informasi Karya Fiksi';
+  } else if (currentKategoriUtama === 'tokoh') {
+    teksJudul = 'Profil Tokoh';
   } else {
     let isBersejarah = false;
     if (record.rawTahunBerdiri) {
@@ -744,46 +753,46 @@ function generateRecordDetails(qid) {
   let designationsHtml = `<h2 style="margin-top:10px">${teksJudul} ${tautanSuntingRingkasan}</h2>`;
   designationsHtml += '<ul class="designations">';
 
-// 1. Gabungkan semua provinsi menjadi satu teks
+  // 1. Gabungkan semua provinsi menjadi satu teks
   let arrayProvinsi = Object.values(record.designations).filter(p => p !== 'Tidak dalam Provinsi');
-  
-  // Jika setelah disaring ternyata kosong, jadikan 'Indonesia' sebagai lokasi default
   if (arrayProvinsi.length === 0) {
     arrayProvinsi.push('Indonesia');
   }
-  
   let teksDaftarProvinsi = arrayProvinsi.join(', '); 
 
   // 2. Siapkan Info Lokasi
-let spesifik = record.lokasiSpesifik; 
-  if (spesifik === 'Tidak dalam Provinsi') {
-    spesifik = null;
-  }
+  let spesifik = record.lokasiSpesifik; 
+  if (spesifik === 'Tidak dalam Provinsi') spesifik = null;
 
   let namaLokasi = teksDaftarProvinsi;
-
-  // Hindari duplikasi kata jika lokasi spesifiknya sama dengan nama provinsi
   if (spesifik && !arrayProvinsi.map(p => p.toLowerCase()).includes(spesifik.toLowerCase())) {
     namaLokasi = `${spesifik}, ${teksDaftarProvinsi}`; 
   }
 
-let infoLokasiHtml = '';
+  let infoLokasiHtml = '';
   if (record.lat && record.lon) {
     let mapsUrl = `https://www.google.com/maps?q=${record.lat},${record.lon}`;
     infoLokasiHtml = `<p class="koordinat-link">Terletak di <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" title="Buka di Google Maps">${namaLokasi}</a></p>`;
   } else {
+    // Khusus tokoh, ubah kata "Terletak di" menjadi "Terkait dengan" agar lebih natural
+    let prefixLokasi = (currentKategoriUtama === 'tokoh') ? 'Terkait dengan:' : 'Terletak di:';
     infoLokasiHtml = 
-      `<p class="koordinat-link">Terletak di: ${namaLokasi}</p>` +
+      `<p class="koordinat-link">${prefixLokasi} ${namaLokasi}</p>` +
       `<p>Koordinat: <span style="font-style: italic; color: #888;">Data belum tersedia</span></p>`;
   }
 
-  // 3. Siapkan Info Tahun Didirikan (Hanya untuk kategori non-alam)
+  // 3. Siapkan Info Tahun Didirikan / Lahir / Diterbitkan
   let infoTahunHtml = '';
   if (currentKategoriUtama !== 'alam') {
+    let labelTahun = 'Didirikan';
+    if (currentKategoriUtama === 'tokoh') labelTahun = 'Lahir';
+    else if (currentKategoriUtama === 'publikasi' || currentKategoriUtama === 'pers') labelTahun = 'Diterbitkan';
+    else if (currentKategoriUtama === 'fiksi') labelTahun = 'Diciptakan';
+
     if (record.tahunBerdiri) {
-      infoTahunHtml = `<p>Didirikan: ${record.tahunBerdiri}</p>`;
+      infoTahunHtml = `<p>${labelTahun}: ${record.tahunBerdiri}</p>`;
     } else {
-      infoTahunHtml = `<p>Didirikan: <span style="font-style: italic; color: #888;">Data belum tersedia</span></p>`;
+      infoTahunHtml = `<p>${labelTahun}: <span style="font-style: italic; color: #888;">Data belum tersedia</span></p>`;
     }
   }
 
