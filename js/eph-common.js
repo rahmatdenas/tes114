@@ -360,7 +360,7 @@ function activateMapMarker(qid) {
 
   // Hitung berapa banyak entitas yang berbagi koordinat persis dengan item ini
   let countSameLocation = 0;
-  Object.values(Records).forEach(r => {
+currentFilteredRecords.forEach(r => {
     if (r.lat === record.lat && r.lon === record.lon) {
       countSameLocation++;
     }
