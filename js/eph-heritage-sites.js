@@ -171,7 +171,6 @@ function dapatkanNamaKlaster(inputTxt) {
 if (cek(['Q40080'])) return 'Pantai'; 
   if (cek(['Q570116'])) return 'Objek wisata';
   if (cek(['Q131681', 'Q12323'])) return 'Waduk, bendungan, & embung';
-  if (cek(['Q193475', 'Q101659'])) return 'Menhir & dolmen';
 
   // Klaster Bangunan & Fasilitas (Non-Alam Default)
   if (cek(['Q32815', 'Q56235676', 'Q56235673', 'Q1454820'])) return 'Masjid';
@@ -193,9 +192,8 @@ if (cek(['Q40080'])) return 'Pantai';
   if (cek(['Q330284', 'Q11315'])) return 'Pasar dan mall';
   if (cek(['Q27686', 'Q875157'])) return 'Hotel dan resor';
   if (cek(['Q4989906', 'Q321053', 'Q11734477', 'Q179700', 'Q170980', 'Q5003624'])) return 'Monumen, patung, & memorial';
-  if (cek(['Q178743', 'Q860861'])) return 'Prasasti dan arca';
-  if (cek(['Q101659'])) return 'Menhir & dolmen';
-  if (cek(['Q839954'])) return 'Situs arkeologi';
+  if (cek(['Q178743', 'Q860861', 'Q1640824'])) return 'Prasasti & arca';
+  if (cek(['Q839954', 'Q193475'])) return 'Situs arkeologi';
   if (cek(['Q220659'])) return 'Artefak';
 
   return 'Objek'; 
@@ -950,7 +948,7 @@ let isBersejarah = false;
   } else if (['Gempa bumi dan tsunami', 'Bencana lainnya', 'Peristiwa lainnya', 'Perang & konflik'].includes(currentNamaKlaster)) {
     prefixLokasi = 'Pusat/lokasi kejadian';
     prefixTahun = 'Terjadi pada';
-  } else if (['Menhir & dolmen'].includes(currentNamaKlaster)) {
+  } else if (['Situs arkeologi', 'Prasasti & arca'].includes(currentNamaKlaster)) {
     prefixLokasi = 'Terletak di';
     prefixTahun = 'Peninggalan';
   }
