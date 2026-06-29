@@ -212,6 +212,9 @@ function getSparqlQuery6(qid) {
       OPTIONAL { ?site wdt:P101 ?spesialisasiItem . ?spesialisasiItem rdfs:label ?spesialisasiLabel . FILTER(LANG(?spesialisasiLabel) = "id") }
     `;
   }
+// ==========================================
+  // BLOK 1: PENEMUAN ARKEOLOGI
+  // ==========================================
   else if (['Prasasti', 'Situs arkeologi', 'Artefak'].includes(klaster)) {
     // Tanggal temu dimodifikasi mengambil node psv: untuk mendeteksi timePrecision
     selectClause += `(SAMPLE(?tglTemuData) AS ?tglTemu) (SAMPLE(?tempatTemuLabel) AS ?tempatTemu) `;
@@ -227,13 +230,25 @@ function getSparqlQuery6(qid) {
     `;
   }
   
+  // ==========================================
+  // BLOK 2: KARYA & LITERATUR (Kolektor dihapus dari sini)
+  // ==========================================
   if (['Prasasti', 'Lontar', 'Naskah', 'Media massa', 'Publikasi', 'Latar karya sastra'].includes(klaster)) {
-    selectClause += `(GROUP_CONCAT(DISTINCT ?bhsLabel; separator=", ") AS ?bahasaList) (GROUP_CONCAT(DISTINCT ?bentukLabel; separator=", ") AS ?bentukList) (GROUP_CONCAT(DISTINCT ?penulisLabel; separator=", ") AS ?penulisList) (GROUP_CONCAT(DISTINCT ?subjekLabel; separator=", ") AS ?subjekList) (GROUP_CONCAT(DISTINCT ?kolektorLabel; separator=", ") AS ?kolektorList) `;
+    selectClause += `(GROUP_CONCAT(DISTINCT ?bhsLabel; separator=", ") AS ?bahasaList) (GROUP_CONCAT(DISTINCT ?bentukLabel; separator=", ") AS ?bentukList) (GROUP_CONCAT(DISTINCT ?penulisLabel; separator=", ") AS ?penulisList) (GROUP_CONCAT(DISTINCT ?subjekLabel; separator=", ") AS ?subjekList) `;
     whereClause += `
       OPTIONAL { ?site wdt:P407 ?bhsItem . ?bhsItem rdfs:label ?bhsLabel . FILTER(LANG(?bhsLabel) = "id") }
       OPTIONAL { ?site wdt:P7937 ?bentukItem . ?bentukItem rdfs:label ?bentukLabel . FILTER(LANG(?bentukLabel) = "id") }
       OPTIONAL { ?site wdt:P50 ?penulisItem . ?penulisItem rdfs:label ?penulisLabel . FILTER(LANG(?penulisLabel) = "id") }
       OPTIONAL { ?site wdt:P921 ?subjekItem . ?subjekItem rdfs:label ?subjekLabel . FILTER(LANG(?subjekLabel) = "id") }
+    `;
+  }
+
+  // ==========================================
+  // BLOK 3: KHUSUS KOLEKSI (Berdiri Sendiri)
+  // ==========================================
+  if (['Prasasti', 'Situs arkeologi', 'Artefak', 'Lontar', 'Naskah', 'Lukisan'].includes(klaster)) {
+    selectClause += `(GROUP_CONCAT(DISTINCT ?kolektorLabel; separator=", ") AS ?kolektorList) `;
+    whereClause += `
       OPTIONAL { ?site wdt:P195 ?kolektorItem . ?kolektorItem rdfs:label ?kolektorLabel . FILTER(LANG(?kolektorLabel) = "id") }
     `;
   }
