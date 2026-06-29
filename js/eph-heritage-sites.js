@@ -192,9 +192,9 @@ if (cek(['Q40080'])) return 'Pantai';
   if (cek(['Q330284', 'Q11315'])) return 'Pasar dan mall';
   if (cek(['Q27686', 'Q875157'])) return 'Hotel dan resor';
   if (cek(['Q4989906', 'Q321053', 'Q11734477', 'Q179700', 'Q170980', 'Q5003624'])) return 'Monumen, patung, & memorial';
-  if (cek(['Q178743', 'Q860861', 'Q1640824'])) return 'Prasasti & arca';
+  if (cek(['Q178743', 'Q1640824'])) return 'Prasasti';
   if (cek(['Q839954', 'Q193475'])) return 'Situs arkeologi';
-  if (cek(['Q220659'])) return 'Artefak';
+  if (cek(['Q220659', 'Q860861'])) return 'Artefak';
 
   return 'Objek'; 
 }
@@ -1012,7 +1012,7 @@ let isBersejarah = false;
   } else if (['Gempa bumi dan tsunami', 'Bencana lainnya', 'Peristiwa lainnya', 'Perang & konflik'].includes(currentNamaKlaster)) {
     prefixLokasi = 'Pusat/lokasi kejadian';
     prefixTahun = 'Terjadi pada';
-  } else if (['Situs arkeologi', 'Prasasti & arca'].includes(currentNamaKlaster)) {
+  } else if (['Situs arkeologi', 'Prasasti'].includes(currentNamaKlaster)) {
     prefixLokasi = 'Terletak di';
     prefixTahun = 'Peninggalan';
   }
