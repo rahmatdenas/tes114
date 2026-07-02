@@ -229,8 +229,9 @@ Cluster = new L.markerClusterGroup({
     // Skenario 1: Jika sudah di zoom maksimal ATAU titiknya benar-benar bertumpuk
     if (currentZoom >= maxZoom || isSamePoint) {
       if (count > 60) {
-        // Cegah mekar, munculkan alert
-        alert(`Terlalu banyak data di titik ini (${count} item). Anda bisa melihatnya melalui menu daftar dan pilih wilayah terkait.`);
+setTimeout(() => {
+          alert(`Terlalu banyak data di titik ini (${count} item). Untuk melihat, buka daftar dan pilih wilayah terkait.`);
+        }, 50); 
       } else {
         // Jika masih di bawah 60, izinkan mekar (spiderfy)
         cluster.spiderfy();
