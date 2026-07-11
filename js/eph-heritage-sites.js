@@ -275,7 +275,7 @@ function populateProvinceTypesData() {
         <h3 id="loading-text" style="margin-bottom: 10px; margin-top:0; color: #333;">
           Sedang Menarik Data<br/>${currentNamaKlaster} di ${currentNamaWilayah}
         </h3>
-        <p style="color: #666; font-size:14px; margin-bottom: 25px;">Mohon menunggu. Lama proses bergantung pada banyaknya data. Jika terdapat lebih dari 5.000 data, proses penarikan akan dilakukan bertahap.</p>
+        <p style="color: #666; font-size:14px; margin-bottom: 25px;">Harap menunggu sekitar 1-2 menit. Jika terdapat lebih dari 5.000 data, proses penarikan akan dilakukan bertahap.</p>
         <div class="loader" style="margin: 0 auto; width: 40px; height: 40px; border-width: 4px;"></div>
       </div>
     `;
