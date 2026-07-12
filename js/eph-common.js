@@ -559,48 +559,46 @@ function activateMapMarker(qid) {
   let record = Records[qid];
   if (!record.mapMarker) return; 
 
-  // Hitung berapa banyak entitas yang berbagi koordinat persis dengan item ini
-  let countSameLocation = 0;
-currentFilteredRecords.forEach(r => {
-    if (r.lat === record.lat && r.lon === record.lon) {
-      countSameLocation++;
-    }
-  });
-
-  // Skenario 2: Buka dari daftar, koordinat bertumpuk > 60
-  if (countSameLocation > 60) {
-    // 1. Arahkan kamera peta ke lokasi tersebut
-    Map.setView([record.lat, record.lon], TILE_LAYER_MAX_ZOOM);
-
-    // 2. Beri jeda sedikit agar peta selesai merender geseran kamera
-    setTimeout(() => {
-      // Cari elemen gelembung klaster yang menampung titik marker ini
-      let visibleParent = Cluster.getVisibleParent(record.mapMarker);
-      
-      // Pastikan klasternya ditemukan di layar dan memiliki elemen HTML (ikon)
-      if (visibleParent && visibleParent._icon) {
-        
-        // Suntikkan kelas CSS animasi denyut
-        visibleParent._icon.classList.add('cluster-efek-denyut');
-        
-        // Bersihkan (hapus) kelas CSS tersebut setelah 4.5 detik (3x detak denyut)
-        setTimeout(() => {
-          if (visibleParent._icon) {
-            visibleParent._icon.classList.remove('cluster-efek-denyut');
-          }
-        }, 4500);
+  // BUNGKUS DENGAN TRY-CATCH: Mencegah error peta merusak layar UI
+  try {
+    let countSameLocation = 0;
+    currentFilteredRecords.forEach(r => {
+      if (r.lat === record.lat && r.lon === record.lon) {
+        countSameLocation++;
       }
-    }, 350); // Jeda 350 milidetik sebelum animasi dimulai
+    });
 
-  } else {
-    // Skenario Normal: Jumlah aman, biarkan sistem mengurai klaster dan membuka popup
-    Cluster.zoomToShowLayer(
-      record.mapMarker,
-      function() {
+    if (countSameLocation > 60) {
+      Map.setView([record.lat, record.lon], TILE_LAYER_MAX_ZOOM);
+      setTimeout(() => {
+        let visibleParent = Cluster.getVisibleParent(record.mapMarker);
+        if (visibleParent && visibleParent._icon) {
+          visibleParent._icon.classList.add('cluster-efek-denyut');
+          setTimeout(() => {
+            if (visibleParent._icon) visibleParent._icon.classList.remove('cluster-efek-denyut');
+          }, 4500);
+        }
+      }, 350);
+    } else {
+      // Pastikan marker ada di dalam klaster sebelum disuruh mekar
+      if (Cluster.hasLayer(record.mapMarker)) {
+        Cluster.zoomToShowLayer(
+          record.mapMarker,
+          function() {
+            // HAPUS Map.setView DARI SINI! zoomToShowLayer sudah otomatis mengatur posisi layar.
+            // Cukup buka popup-nya saja.
+            if (!record.popup.isOpen()) record.mapMarker.openPopup();
+          }
+        );
+      } else {
+        // Jaga-jaga jika marker tidak ada di klaster (misal terhalang filter)
         Map.setView([record.lat, record.lon], Map.getZoom());
         if (!record.popup.isOpen()) record.mapMarker.openPopup();
       }
-    );
+    }
+  } catch (error) {
+    // Jika Leaflet macet, abaikan secara diam-diam agar fungsi displayRecordDetails() tetap jalan
+    console.warn("Interupsi animasi peta dicegat:", error);
   }
 }
 
