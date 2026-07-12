@@ -30,6 +30,8 @@ var currentSearchToken    = 0;     // <--- Letakkan di sini (berdekatan dengan i
 var globalFetchController = new AbortController(); // <--- (Jika Anda jadi memasang AbortController)
 var activeXhrs            = [];
 var currentActiveShapeLayer = null;
+var lastValidHash   = 'landing';
+var isRevertingHash = false;
 
 window.addEventListener('load', init);
 
@@ -432,31 +434,74 @@ function enableApp() {
 }
 
 function processHashChange() {
+  // 1. CEGATAN MUNDUR: Jika kita sedang dalam proses mengembalikan URL karena pengguna 
+  // menekan "Batal", abaikan siklus ini agar tidak terjadi infinite loop.
+  if (isRevertingHash) {
+    isRevertingHash = false;
+    return; 
+  }
+
   let fragment = window.location.hash.replace('#', '');
 
-  // Hapus perintah window.setMobilePanelExpanded(true) dari sini
+  // Jangan paksa panel terbuka di mobile saat baru dimuat
   if (typeof window.setMobilePanelExpanded === 'function') {
-    // Biarkan variabel status awal saja, jangan paksa panel terbuka
     isAppInitialLoad = false; 
   }
 
-  // 1. Eksekusi Navigasi Dinamis (Fungsi baru)
+  // =================================================================
+  // 2. KOTAK KONFIRMASI (Bekerja mulus di Safari & Chrome)
+  // =================================================================
+  
+  // Jika pengguna mencoba ke Beranda (fragment kosong) TAPI ada data yang sudah/sedang ditarik
+  if (fragment === '' && (PrimaryDataIsLoaded || isFetching)) {
+    
+    // Jeda 50ms memberikan waktu bagi browser (terutama Safari) untuk menyelesaikan 
+    // antrean animasi UI sebelum dibekukan oleh kotak dialog confirm()
+    setTimeout(() => {
+      let yakin = confirm("Kembali ke beranda dapat membersihkan data yang sedang/sudah dimuat dan Anda harus menarik data lagi. Anda yakin?");
+      
+      if (yakin) {
+        // JIKA YA: Bersihkan semua dan kembali ke Beranda murni
+        lastValidHash = 'landing';
+        history.replaceState(null, null, window.location.pathname);
+        resetApp();
+        document.title = 'Mulai – ' + BASE_TITLE;
+        displayPanelContent('landing');
+        updateNavigationUI(''); 
+      } else {
+        // JIKA BATAL: Kembalikan URL ke posisi sebelumnya secara diam-diam
+        isRevertingHash = true;
+        window.location.hash = lastValidHash === 'landing' ? '' : lastValidHash;
+      }
+    }, 50);
+    
+    return; // Hentikan eksekusi fungsi di sini! Jangan teruskan ke bawah.
+  }
+
+  // =================================================================
+  // Jika tidak ada halangan atau bukan menuju Beranda, jalankan normal
+  // =================================================================
+
   updateNavigationUI(fragment);
 
   if (fragment === '') {
-    // BERANDA: URL bersih, setel ulang aplikasi
-    history.replaceState(null, null, window.location.pathname); // Hilangkan '#' dari address bar
+    // BERANDA NORMAL (Tidak ada data ditarik, murni baru buka web)
+    lastValidHash = 'landing';
+    history.replaceState(null, null, window.location.pathname); 
     resetApp(); 
     document.title = 'Mulai – ' + BASE_TITLE;
     displayPanelContent('landing');
   }
   else if (fragment === 'about') {
     // TENTANG
+    lastValidHash = 'about'; // Catat sebagai hash terakhir yang valid
     document.title = 'Tentang – ' + BASE_TITLE;
     displayPanelContent('about');
   }
   else {
     // HASIL atau DETAIL BUTIR
+    lastValidHash = fragment; // Catat QID atau 'hasil' sebagai hash terakhir yang valid
+    
     let isIndexPage = (fragment === 'hasil');
 
     // KONDISI 1: DATA BELUM DITARIK (ATAU SEDANG DITARIK)
