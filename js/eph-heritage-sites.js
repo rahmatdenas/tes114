@@ -78,7 +78,7 @@ populateProvinceTypesData()
           // ... (sisa kode catch Anda) ...
         });
     })
-    .catch(error => {
+.catch(error => {
        // KUNCI: Karena kita melempar (throw) 'ABORTED' dari gerbang di atas, 
        // error tersebut akan ditangkap di sini dan diabaikan dengan aman tanpa merusak UI.
        if (error === 'ABORTED') {
@@ -90,7 +90,7 @@ populateProvinceTypesData()
        isFetching = false;
        PrimaryDataIsLoaded = false;
 
-       // 2. Tampilkan pesan error di panel daftar (menggantikan alert bawaan browser)
+       // 2. Tampilkan pesan error di panel daftar
        let indexList = document.getElementById('index-list');
        if (indexList) {         
          indexList.innerHTML = `
@@ -101,8 +101,8 @@ populateProvinceTypesData()
            </div>
          `;
        }
-      setTimeout(() => {
-loadingTimeoutToken = setTimeout(() => {
+  
+  loadingTimeoutToken = setTimeout(() => {
     let loadingDesc = document.getElementById('loading-desc');
     if (loadingDesc && isFetching) {
        loadingDesc.innerHTML = `Data yang ditarik terlalu banyak. Harap menunggu, 3-5 menit lagi...`;
@@ -110,7 +110,7 @@ loadingTimeoutToken = setTimeout(() => {
   }, 45000);
        
        console.error("Data utama gagal dimuat. Cek koneksi atau server Wikidata.", error);
-    });
+    }); 
 }
 
 function doPreProcessing() {
