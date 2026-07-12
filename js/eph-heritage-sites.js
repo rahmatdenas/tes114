@@ -819,35 +819,29 @@ record.mapMarker = mapMarker;
       mapMarker.bindPopup(record.title, { 
         closeButton: false,
         maxWidth: 200,
-        togglePopup: false // <--- WAJIB ADA: Mencegah Leaflet menutup popup di klik kedua
+        togglePopup: false // <--- Wajib agar klik kedua tidak menutup popup
       });
 
       // =======================================================
-      // +++ LOGIKA KLIK KEDUA (BENDERA ANTI-BALAPAN) +++
+      // +++ LOGIKA ANTI-BOCOR (PENGUKUR WAKTU) +++
       // =======================================================
       
-      // 1. Saat popup baru terbuka, pasang bendera "Siap Diklik" 
-      // TAPI beri jeda 50 milidetik agar tidak tertipu oleh klik pertama!
+      // 1. Catat waktu persis saat popup terbuka
       mapMarker.on('popupopen', function() {
-        let markerIni = this;
-        setTimeout(() => {
-          markerIni._siapUntukKlikKedua = true;
-        }, 50);
+        this._waktuBuka = Date.now();
       });
 
-      // 2. Saat popup tertutup (karena klik area lain), reset benderanya.
-      mapMarker.on('popupclose', function() {
-        this._siapUntukKlikKedua = false;
-      });
-
-      // 3. Eksekusi! Cek kondisi benderanya saat diklik.
+      // 2. Saat diklik, cek selisih waktunya!
       mapMarker.on('click', function() {
-        if (this._siapUntukKlikKedua === true) {
+        
+        // Cek: Apakah popup sedang terbuka? DAN 
+        // Apakah terbukanya sudah lebih dari 300 milidetik yang lalu?
+        if (this.isPopupOpen() && this._waktuBuka && (Date.now() - this._waktuBuka > 300)) {
           
-          // --- INI KLIK KEDUA! ---
+          // Panggil panel detail untuk merender data Wikipedia, dll
           displayRecordDetails(qid); 
           
-          // Tarik panel ke atas untuk pengguna mobile
+          // Tarik panel mobile ke atas
           if (typeof window.setMobilePanelExpanded === 'function') {
             window.setMobilePanelExpanded(true);
           }
