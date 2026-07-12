@@ -107,7 +107,7 @@ populateProvinceTypesData()
     if (loadingDesc && isFetching) {
        loadingDesc.innerHTML = `Data yang ditarik terlalu banyak. Harap menunggu, 3-5 menit...`;
     }
-  }, 2000);
+  }, 1000);
        
        console.error("Data utama gagal dimuat. Cek koneksi atau server Wikidata.", error);
     }); 
@@ -1253,6 +1253,9 @@ if (spesifik === 'Wilayah Lainnya/Tidak Spesifik') spesifik = null;
   let arsipHtml = `<div id="arsip-container-${qid}" class="loading"><div class="loader" style="width: 20px; height: 20px; border-width: 2px; margin-top: 8px;"></div></div>`;
 
   let panelElem = document.createElement('div');
+if (currentNamaKlaster === 'Tokoh') {
+  panelElem.classList.add('mode-tokoh');
+}
   
   panelElem.innerHTML =
     `<a class="main-wikidata-link" href="https://www.wikidata.org/wiki/${qid}" target="_blank" title="Lihat di Wikidata">` +
