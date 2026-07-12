@@ -94,7 +94,7 @@ function setupLandingForm() {
     }
   });
 
-  btnMulai.addEventListener('click', function() {
+btnMulai.addEventListener('click', function() {
     let finalValue = inputTxt.value.trim();
     if (finalValue === '' || finalValue === 'wd:') {
       alert('Anda belum memasukkan parameter Q-ID');
@@ -107,9 +107,29 @@ function setupLandingForm() {
     isFetching = true; 
     currentSearchToken = Date.now();
     
-    // Ubah URL ke #hasil agar masuk ke daftar
     window.location.hash = 'hasil';
     
+    // =========================================================
+    // +++ PASANG BOM WAKTU DI SINI SAYANGKU +++
+    // =========================================================
+    loadingTimeoutToken = setTimeout(() => {
+      // Tembak langsung bungkus utamanya biar pasti kena
+      let indexList = document.getElementById('index-list'); 
+      
+      // Pastikan statusnya memang masih mencari data (isFetching = true)
+      if (indexList && isFetching) {
+        indexList.innerHTML = `
+          <div style="padding: 20px; text-align: center; margin-top: 20px;">
+            <p style="color:#cc0000; font-weight:bold; font-size: 15px;">
+              ⏳ Data yang ditarik terlalu banyak.<br>
+              Harap menunggu, proses ini bisa memakan waktu 3-5 menit...
+            </p>
+          </div>
+        `;
+      }
+    }, 5000); // Set 5000 (5 detik)
+    // =========================================================
+
     loadPrimaryData();
   });
 }
