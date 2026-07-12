@@ -57,7 +57,7 @@ Map.on('popupopen', function(e) {
       
       let imgHtml = `
         <div style="text-align:center;margin-bottom: 5px;">
-          <img src="${imgUrl}" style="width:250px; height:180px; object-fit:cover; border-radius:4px;" alt="Thumbnail">
+          <img src="${imgUrl}" style="width:200px; height:120px; object-fit:cover; border-radius:4px;" alt="Thumbnail">
         </div>
       `;
       e.popup.setContent(imgHtml + `${record.title}`);
