@@ -311,22 +311,7 @@ Map = new L.map('map', {
     showPopup: false,
     strings: { title: "Tunjukkan lokasi saya" },
     icon: 'ikon-gps-custom' 
-  }).addTo(Map);
-
-  // Jika tombol GPS bawaan ditekan (Aktif), sembunyikan titik buatan "Sekitar Anda" (Aneh sih kok boros)
-  Map.on('locateactivate', function() {
-    if (userLocationMarker) {
-      Map.removeLayer(userLocationMarker);
-    }
-  });
-
-  // Jika tombol GPS bawaan dimatikan, dan mode "Sekitar Anda" masih aktif, munculkan lagi titiknya (Aneh sih kok boros)
-  Map.on('locatedeactivate', function() {
-    if (typeof currentRegionFilter !== 'undefined' && currentRegionFilter === 'terdekat' && userLocationMarker) {
-      userLocationMarker.addTo(Map);
-    }
-  });
-  
+  }).addTo(Map);  
 
   let powered = L.control({ position: 'bottomleft' });
   powered.onAdd = function(Map) {
@@ -936,69 +921,74 @@ function parseDate(result, keyName) {
 // FITUR RADAR GPS: MENCARI SITUS DALAM RADIUS TERTENTU
 // ============================================================
 function jalankanFilterGPS(selectElem) {
-  if (!navigator.geolocation) {
-    alert("Maaf, peramban Anda tidak mendukung fitur lokasi.");
+  // 1. Beri tahu pengguna sistem sedang mencari
+  selectElem.options[selectElem.selectedIndex].text = "⏳ Mencari satelit GPS...";
+
+  // =========================================================
+  // KUNCI KECERDASAN: SIMPAN & MATIKAN AUTO-ZOOM PLUGIN
+  // =========================================================
+  let konfigurasiZoomAsli = window.TombolGPSMap.options.setView;
+  window.TombolGPSMap.options.setView = false; // Matikan tarikan kamera plugin!
+
+  // 2. Perintahkan plugin bawaan menyala dan mulai melacak
+  window.TombolGPSMap.start();
+
+  // 3. Tangkap sinyal saat plugin selesai mendaratkan titik GPS-nya
+  Map.once('locationfound', function(e) {
+    // KEMBALIKAN konfigurasi zoom agar kalau tombolnya dipencet manual, dia tetap nge-zoom
+    window.TombolGPSMap.options.setView = konfigurasiZoomAsli;
+
+    // Simpan koordinat ke variabel global
+    userLocation = {
+      lat: e.latlng.lat,
+      lon: e.latlng.lng
+    };
+
+    selectElem.options[selectElem.selectedIndex].text = "📍 Sekitar Anda (Radius 10 km)";
+    currentRegionFilter = 'terdekat';
+
+    // Bersihkan lingkaran 10km lama jika ada
+    if (userRadiusCircle) Map.removeLayer(userRadiusCircle);
+
+    // Buat Lingkaran Merah Transparan
+    userRadiusCircle = L.circle([userLocation.lat, userLocation.lon], {
+      color: 'transparent',
+      fillColor: '#882222',
+      fillOpacity: 0.1,
+      radius: 10000
+    }).addTo(Map);
+
+    // Kamera kitalah yang mengambil alih! Zoom out untuk mencakup seluruh 10km
+    Map.fitBounds(userRadiusCircle.getBounds());
+
+    // Jalankan filter
+    applyIntersectionFilter();
+  });
+
+  // 4. Tangkap jika GPS ditolak atau gagal
+  Map.once('locationerror', function(e) {
+    window.TombolGPSMap.options.setView = konfigurasiZoomAsli;
+    window.TombolGPSMap.stop(); // Matikan plugin
+    alert("Akses lokasi gagal atau ditolak. Pastikan GPS HP Anda menyala.");
     batalkanFilterGPS(selectElem);
-    return;
-  }
-
-  selectElem.options[selectElem.selectedIndex].text = "Mencari satelit GPS...";
-
-  navigator.geolocation.getCurrentPosition(
-    function(position) {
-      // 1. Simpan koordinat ke variabel global
-      userLocation = {
-        lat: position.coords.latitude,
-        lon: position.coords.longitude
-      };
-      
-      // 2. Kembalikan teks dan setel status filter
-      selectElem.options[selectElem.selectedIndex].text = "Sekitar Anda (10 km)";
-      currentRegionFilter = 'terdekat';
-if (window.TombolGPSMap) window.TombolGPSMap.stop();
-if (userLocationMarker) Map.removeLayer(userLocationMarker);
-      if (userRadiusCircle) Map.removeLayer(userRadiusCircle);
-
-      // 2. Buat Lingkaran Merah Transparan (Radius dalam meter)
-      userRadiusCircle = L.circle([userLocation.lat, userLocation.lon], {
-        color: 'transparent',       // Warna garis tepi (samakan dengan warna tema webmu)
-        fillColor: '#882222',   // Warna isi
-        fillOpacity: 0.1,       // Sangat transparan
-        radius: 10000           // 10.000 meter = 10 km
-      }).addTo(Map);
-
-let ikonDenyut = L.divIcon({
-        className: 'titik-gps-denyut',
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
-      });
-      
-      // 3. Buat Titik Tengah (Bisa pakai ikon bawaan Leaflet)
-userLocationMarker = L.marker([userLocation.lat, userLocation.lon], { icon: ikonDenyut })
-        .addTo(Map)
-        .bindPopup("<b>Lokasi Anda</b><br>Menampilkan situs dalam radius 10 km.");
-
-      Map.fitBounds(userRadiusCircle.getBounds());
-      
-      // 3. SEKARANG baru panggil saringan master Anda!
-      applyIntersectionFilter(); 
-    },
-    function(error) {
-      alert("Akses lokasi gagal atau ditolak. Pastikan GPS HP Anda menyala.");
-      batalkanFilterGPS(selectElem);
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
+  });
 }
 
 function batalkanFilterGPS(selectElem) {
-  if (userLocationMarker) Map.removeLayer(userLocationMarker);
-if (userRadiusCircle) Map.removeLayer(userRadiusCircle);
+  // 1. Matikan langsung plugin GPS bawaannya (Titiknya akan hilang otomatis!)
+  if (window.TombolGPSMap) window.TombolGPSMap.stop();
+
+  // 2. Hapus lingkaran merah buatan kita
+  if (userRadiusCircle) Map.removeLayer(userRadiusCircle);
+
+  // 3. Reset ke status 'all'
   selectElem.value = 'all';
   currentRegionFilter = 'all';
   userLocation = null;
+
   let opsi = Array.from(selectElem.options).find(opt => opt.value === 'terdekat');
-  if (opsi) opsi.text = "Sekitar Anda (10 km)";
+  if (opsi) opsi.text = "📍 Sekitar Anda (Radius 10 km)";
+
   applyIntersectionFilter();
 }
 
