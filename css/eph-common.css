@@ -107,9 +107,9 @@ nav ul li {
   padding: 0;
 }
 
-#nav-standar > li:nth-child(1), #nav-detail > li:nth-child(1) { flex: 1; text-align: left; }
-#nav-standar > li:nth-child(2), #nav-detail > li:nth-child(2) { flex: 3; text-align: center; }
-#nav-standar > li:nth-child(3), #nav-detail > li:nth-child(3) { flex: 1; text-align: right; }
+#nav-standar > li:nth-child(1), #nav-detail > li:nth-child(1) { flex: 1; text-align: left; padding-left:20px;}
+#nav-standar > li:nth-child(2), #nav-detail > li:nth-child(2) { flex: 3; text-align: center;}
+#nav-standar > li:nth-child(3), #nav-detail > li:nth-child(3) { flex: 1; text-align: right; padding-right:20px;}
 
 nav li a {
   display: block; /* Mengubah inline-block menjadi block agar memenuhi seluruh area <li> */
@@ -189,6 +189,7 @@ nav li.active > a, nav li > a.active {
   color: #eaa;
 }
 
+
 .filter-row {
   display: flex;
   justify-content: space-between;
@@ -196,20 +197,19 @@ nav li.active > a, nav li > a.active {
   margin-bottom: 12px;
 }
 
-.filter-box {
+.filter-box, #provinsi-input, #negara-input , #jenis-dropdown {
   position: relative;
   border-radius: 6px;
   background-color: #f3e9e9;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='32'><polyline fill='rgb(238,170,170)' points='6,12 12,22 18,12'/><line stroke='rgb(238,170,170)' x1='0' y1='0' x2='0' y2='32' /></svg>");
   background-position: right;
   background-repeat: no-repeat;
-}
-
-.filter-box select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  box-sizing: content-box;
+}
+
+.filter-box select {
   height: 32px;
   width: 100%;
   padding: 0 5px;
@@ -217,7 +217,10 @@ nav li.active > a, nav li > a.active {
   font-size: 12.5px;
   line-height: 32px;
   background: none;
-  color: #611;
+  color: #611;  
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 select::-moz-focus-inner {
