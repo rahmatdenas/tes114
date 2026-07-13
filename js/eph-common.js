@@ -30,10 +30,12 @@ var currentSearchToken    = 0;     // <--- Letakkan di sini (berdekatan dengan i
 var globalFetchController = new AbortController(); // <--- (Jika Anda jadi memasang AbortController)
 var activeXhrs            = [];
 var currentActiveShapeLayer = null;
+var currentDisplayedQid = null;
 var lastValidHash   = 'landing';
 var isRevertingHash = false;
 var loadingTimeoutToken = null;
 var searchDebounceToken = null;
+
 
 window.addEventListener('load', init);
 
@@ -290,10 +292,7 @@ Cluster = new L.markerClusterGroup({
   },
   // MATIKAN KENDALI OTOMATIS BAWAAN
   zoomToBoundsOnClick: false, 
-  spiderfyOnMaxZoom: false,
-
-  // +++ KUNCI PERBAIKAN: Matikan klaster sepenuhnya secara aman di zoom 19 ke atas +++
-  disableClusteringAtZoom: 19 
+  spiderfyOnMaxZoom: false
 }).addTo(Map);
 
   // KENDALIKAN MANUAL KLIK PADA KLASTER
@@ -691,8 +690,9 @@ function displayPanelContent(id) {
 }
 
 function displayRecordDetails(qid) {
+    if (currentDisplayedQid === qid) return;  // <-- CALL #2 berhenti di sini, tidak ada kedip shapeLayer
+  currentDisplayedQid = qid;
   let record = Records[qid];
-  window.location.hash = `#${qid}`;
   document.title = `${record.indexTitle} – ${BASE_TITLE}`;
 
   // =========================================================
