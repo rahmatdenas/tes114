@@ -162,7 +162,7 @@ nav li a {
   display: block; /* Mengubah inline-block menjadi block agar memenuhi seluruh area <li> */
   width: 100%;    /* Memastikan area klik meregang penuh dari ujung ke ujung blok */
   box-sizing: border-box; /* Menjaga ukuran tetap pas meski ada padding */
-  padding: 10px 0;
+  padding: 6px 0;
   font-size: 12px;
   line-height: 12px;
   font-family: "Open Sans", sans-serif;
