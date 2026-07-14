@@ -95,8 +95,7 @@ input, textarea, select {
     left: 0;
     width: 500px; /* KUNCI: Disamakan persis dengan lebar #panel milikmu */
     z-index: 9999;
-        background-color: #7d0d0d;
-        background-image: linear-gradient(to top, #9b0d0b, #550303);
+        background: #6f0909;
   }
 
 #branding {
