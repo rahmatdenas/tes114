@@ -75,6 +75,12 @@ function updateLabel(expanded) {
 
  window.setMobilePanelExpanded = function(expand, animate) {
     if (!panel || !isMobile()) return;
+
+   if (!expand) {
+      if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+        document.activeElement.blur();
+      }
+   }
     
     // 1. BEKUKAN atau CAIRKAN animasi sesuai perintah
     if (animate === false) {
@@ -116,6 +122,10 @@ function updateLabel(expanded) {
     if (target.closest('select, input, textarea')) {
       e.stopPropagation(); 
       return; 
+    }
+
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+      document.activeElement.blur();
     }
 
     dragging = true;
