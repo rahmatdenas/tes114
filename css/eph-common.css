@@ -906,3 +906,7 @@ position: absolute;
   70% { box-shadow: 0 0 0 15px rgba(42, 147, 238, 0); }
   100% { box-shadow: 0 0 0 0 rgba(42, 147, 238, 0); }
 }
+
+.leaflet-fade-anim .leaflet-popup {
+	transition:none;
+	}
