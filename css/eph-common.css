@@ -638,10 +638,11 @@ padding-bottom: 68px;
 
 .sunting-link {
   display: inline-block;
-  width: 13px;
+  width: 22px;
   height: 13px;
   vertical-align: middle;
   margin-left: 5px;
+  margin-right: 5px;
   background-color: #888;
   -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M13.43 1.9a1.86 1.86 0 0 1 2.62 0l1.93 1.93a1.86 1.86 0 0 1 0 2.63l-10.9 10.9L2 18l.82-5.07z"/></svg>');
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M13.43 1.9a1.86 1.86 0 0 1 2.62 0l1.93 1.93a1.86 1.86 0 0 1 0 2.63l-10.9 10.9L2 18l.82-5.07z"/></svg>');
