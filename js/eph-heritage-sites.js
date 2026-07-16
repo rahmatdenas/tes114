@@ -517,7 +517,8 @@ async function populateImageAndWikipediaData() {
   let tiketPencarianIni = currentSearchToken;
   
   let totalData = daftarQid.length;
-
+if (btnImg) btnImg.classList.remove('disabled');
+  if (btnArt) btnArt.classList.remove('disabled');
   // =========================================================
   // FUNGSI PEMBANTU: Menarik 1 kloter (1.000 data) dengan aman
   // =========================================================
