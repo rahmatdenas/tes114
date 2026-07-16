@@ -484,11 +484,14 @@ async function fetchWdqsRawWithRetry(query, maxRetry = 3, offsetLabel = '') {
         progressText.innerHTML = `<span style="color:#cc0000; font-weight:bold;">Percobaan ${attempt}/${maxRetry} gagal${offsetLabel}. Melakukan penarikan ulang.</span>`;
       }
 
-      if (attempt === maxRetry) {
-        await new Promise(r => setTimeout(r, 400)); // beri jeda agar teks sempat ter-render. TANPA BOM WAKTU, perlukah?
-        throw error;
-      }
+if (attempt === maxRetry) {
+  let tiketSaatIni = currentSearchToken;   // simpan: "saat ini tiketnya 1000"
+  await new Promise(r => setTimeout(r, 400));
+  if (currentSearchToken !== tiketSaatIni) throw 'ABORTED';  // "lho, sekarang tiketnya sudah 0, berarti user sudah reset!"
+  throw error;
+}
   }
+}
 }
 
 // FUNGSI BARU #3: Loop LIMIT/OFFSET, PAKAI JUMLAH ENTITAS UNIK (?SQ) sebagai penanda halaman terakhir
@@ -507,7 +510,7 @@ async function queryWdqsPaginated(queryTemplate, processEachResult, postprocessC
 
       // Jika jaringan dibatalkan (abort), fetchWdqsRawWithRetry akan melempar error
       // Error tersebut akan langsung ditangkap oleh blok catch di bawah
-      let bindings = await fetchWdqsRawWithRetry(pagedQuery, 3, ` (offset ${offset})`);
+      let bindings = await fetchWdqsRawWithRetry(pagedQuery, 3, ` (data ${offset}-${offset + chunkSize})`);
       
       // =========================================================
       // +++ JINAKKAN BOM WAKTU (Karena data sudah mulai masuk) +++
