@@ -224,7 +224,7 @@ loadingTimeoutToken = setTimeout(() => {
       
       // Pastikan statusnya memang masih mencari data (isFetching = true)
       if (loadingDesc && isFetching) {
-        loadingDesc.innerHTML = `Jika data mencapai ribuan, estimasi proses penarikan data sekitar 3-7 menit...`;
+        loadingDesc.innerHTML = `Jika data mencapai ribuan, proses penarikan data membutuhkan waktu sekitar 3-7 menit...`;
       }
     }, 10000); // (10 detik)
     // =========================================================
@@ -586,14 +586,20 @@ async function queryWdqsPaginated(queryTemplate, processEachResult, postprocessC
       totalDataTerkumpul += kombinasiUnik;
       console.log(`[Halaman ${halaman}] Kombinasi (s,p,l) unik:`, kombinasiUnik);
       
-      if (kombinasiUnik < chunkSize) {
+if (kombinasiUnik < chunkSize) {
          break; 
       } else {
          let progressText = document.querySelector('#index-list p');
-         // Jangan ubah teks jika rem darurat sudah ditarik
+         
          if (progressText && !window.hentikanPencarian) {
-           progressText.innerHTML = `Selesai menarik <b>${totalDataTerkumpul.toLocaleString('id-ID')}</b> data. Penarikan data masih berlanjut... <br>
-           <a href="#" onclick="window.konfirmasiBerhenti(); return false;" style="color:#7b0d0c; font-weight:bold; font-size: 13px; text-decoration:underline; display:inline-block; margin-top:5px;">Klik di sini</a> jika Anda ingin mencukupkan pencarian.`;
+           let teksLinkBerhenti = '';
+           
+           // +++ KUNCI PERBAIKAN: Tombol hanya muncul jika data >= 50.000 +++
+           if (totalDataTerkumpul >= 50000) {
+             teksLinkBerhenti = `<br><br><a href="#" onclick="window.konfirmasiBerhenti(); return false;" style="color:#7b0d0c; font-weight:bold; font-size: 13px; text-decoration:underline; display:inline-block; margin-top:5px;">Klik di sini jika Anda ingin mencukupkan pencarian</a>`;
+           }
+
+           progressText.innerHTML = `Selesai menarik <b>${totalDataTerkumpul.toLocaleString('id-ID')}</b> data. Penarikan data masih berlanjut... ${teksLinkBerhenti}`;
          }
       }
       offset += chunkSize;
