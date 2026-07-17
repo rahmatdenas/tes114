@@ -554,10 +554,6 @@ async function populateImageAndWikipediaData() {
       // SKENARIO A: Total <= 20.000 (FULL PARALEL)
       // Tembak semua kloter serentak dalam 1 waktu!
       // ========================================================
-      
-      // Ubah teks tombol menjadi indikator memuat (tanpa persentase karena instan)
-      if (btnImg) btnImg.textContent = 'Memuat Gambar...';
-      if (btnArt) btnArt.textContent = 'Memuat Artikel...';
 
       let daftarJanji = kelompokCicilan.map(cicilan => tarikSatuKloter(cicilan));
 
