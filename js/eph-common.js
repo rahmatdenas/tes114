@@ -618,9 +618,9 @@ if (kombinasiUnik < chunkSize) {
          if (progressText && !window.hentikanPencarian) {
            let teksLinkBerhenti = '';
            
-           // +++ KUNCI PERBAIKAN: Tombol hanya muncul jika data >= 50.000 +++
-           if (totalDataTerkumpul >= 50000) {
-             teksLinkBerhenti = `<br><br><a href="#" onclick="window.konfirmasiBerhenti(); return false;" style="color:#7b0d0c; font-weight:bold; font-size: 13px; text-decoration:underline; display:inline-block; margin-top:5px;">Klik di sini jika Anda ingin mencukupkan pencarian</a>`;
+           // +++ KUNCI PERBAIKAN: Tombol hanya muncul jika data >= 20.000 +++
+           if (totalDataTerkumpul >= 20000) {
+             teksLinkBerhenti = `<a href="#" onclick="window.konfirmasiBerhenti(); return false;" style="color:#7b0d0c; font-weight:bold; display:inline-block;">Klik di sini</a> jika Anda ingin mencukupkan pencarian`;
            }
 
            progressText.innerHTML = `Selesai menarik <b>${totalDataTerkumpul.toLocaleString('id-ID')}</b> data. Penarikan data masih berlanjut... ${teksLinkBerhenti}`;
