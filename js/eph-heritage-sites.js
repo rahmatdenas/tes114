@@ -307,13 +307,16 @@ function populateProvinceTypesData() {
   // ==========================================
   // 3. FUNGSI PEMBANTU EKSEKUSI KUERI
   // ==========================================
-  function eksekusiKueriKeWikidata(kueriFinal) {
+function eksekusiKueriKeWikidata(kueriFinal) {
    console.log("Kueri yang dikirim:", kueriFinal);
     return queryWdqsPaginated(
       kueriFinal,
       function(result) {
         let qid = result.SQ.value;
-        if (!(qid in Records)) Records[qid] = new Record(false);
+        
+        // KUNCI OPTIMALISASI: Gunakan SimpleRecord yang sudah punya ruang kosong untuk koordinat
+        if (!(qid in Records)) Records[qid] = new SimpleRecord(); 
+        
         let record = Records[qid];
         record.id = qid;
 
@@ -471,6 +474,7 @@ async function populateCoordinatesData() {
   let batchSize = 4; 
 
   for (let i = 0; i < kelompokCicilan.length; i += batchSize) {
+    if (currentSearchToken !== tiketPencarianIni) break;
     let potonganBatch = kelompokCicilan.slice(i, i + batchSize);
     
     // Teks Loading Progresif
