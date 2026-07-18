@@ -1295,9 +1295,15 @@ let validRecords = Object.values(Records).filter(record => {
   currentRenderIndex = 0; 
 
   renderNextChunk();
-  updateFeatureCounts(validRecords.length);
+updateFeatureCounts(validRecords.length);
 
-  setTimeout(() => {
+  // +++ KUNCI PENGAMAN: Jinakkan bom waktu sebelumnya jika ada +++
+  if (renderTimeoutToken) {
+    clearTimeout(renderTimeoutToken);
+  }
+
+  // Pasang bom waktu baru
+  renderTimeoutToken = setTimeout(() => {
     validRecords.forEach(record => {
       if (record.mapMarker) validMarkers.push(record.mapMarker);
     });
@@ -1305,10 +1311,14 @@ let validRecords = Object.values(Records).filter(record => {
     if (validMarkers.length > 0) {
       Cluster.addLayers(validMarkers);
       if (!preventZoom) {
-        Map.fitBounds(Cluster.getBounds());
+        // Gunakan flyToBounds untuk pergerakan kamera yang mulus
+        Map.flyToBounds(Cluster.getBounds(), { duration: 0.5 });
       }
     }
-  }, 10);
+    
+    // Bersihkan token setelah selesai
+    renderTimeoutToken = null; 
+  }, 150); 
 }
 
 function generateRecordDetails(qid) {
