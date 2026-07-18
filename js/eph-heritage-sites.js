@@ -48,26 +48,25 @@ function formatWikidataDate(dateString, precision) {
 function loadPrimaryData() {
   let tiketPencarianIni = currentSearchToken;
   
-  // +++ TAMBAHAN: Tarik sinyal dari AbortController global +++
-  let signal = typeof globalFetchController !== 'undefined' ? globalFetchController.signal : null;
-  
   doPreProcessing();
 
-  // Opsional: Oper signal jika populateProvinceTypesData membutuhkannya
   populateProvinceTypesData() 
     .then(() => {
-      // Gerbang 1: Tambahkan pengecekan signal.aborted
-      if (currentSearchToken !== tiketPencarianIni || (signal && signal.aborted)) throw 'ABORTED';
+      // Gerbang 1: Cek apakah dibatalkan total (bukan dihentikan manual)
+      if (currentSearchToken !== tiketPencarianIni) throw 'ABORTED';
+      if (globalFetchController.signal.aborted && !window.hentikanPencarian) throw 'ABORTED';
       
       return populateCoordinatesData().then(() => {
-         // Gerbang 2: Tambahkan pengecekan signal.aborted
-         if (currentSearchToken !== tiketPencarianIni || (signal && signal.aborted)) throw 'ABORTED';
+         // Gerbang 2: Cek sebelum menyuntikkan data ke Peta
+         if (currentSearchToken !== tiketPencarianIni) throw 'ABORTED';
+         if (globalFetchController.signal.aborted && !window.hentikanPencarian) throw 'ABORTED';
          populateMapAndIndex();
       });
     })
     .then(() => {
-      // Gerbang 3: Tambahkan pengecekan signal.aborted
-      if (currentSearchToken !== tiketPencarianIni || (signal && signal.aborted)) throw 'ABORTED';
+      // Gerbang 3: Cek sebelum membuang layar loading
+      if (currentSearchToken !== tiketPencarianIni) throw 'ABORTED';
+      if (globalFetchController.signal.aborted && !window.hentikanPencarian) throw 'ABORTED';
       
       // 1. Matikan layar loading secara resmi (isFetching = false)
       enableApp(); 
@@ -81,7 +80,7 @@ function loadPrimaryData() {
         btnAll.classList.add('active');      
       }
 
-      // 2. Tarik gambar dan artikel (fungsi ini sudah kita amankan dengan Promise.allSettled sebelumnya)
+      // 2. Tarik gambar dan artikel
       populateImageAndWikipediaData();
     })
     .catch(error => {
@@ -101,7 +100,7 @@ function loadPrimaryData() {
          indexList.innerHTML = `
            <div style="padding: 40px 20px; text-align: center; line-height: 1.6;">
              <h3 style="margin-bottom: 10px; margin-top:0; color: #cc0000;">Gagal Menarik Data</h3>
-             <p style="color: #666; font-size:14px; margin-bottom: 25px;">Pastikan internet stabil atau tutup dan coba lagi nanti. Jika data gagal dimuat karena terlalu banyak (lebih dari 20.000), silakan persempit pencarian.</p>
+             <p style="color: #666; font-size:14px; margin-bottom: 25px;">Pastikan internet stabil atau tutup dan coba lagi nanti.</p>
              <a href="#" onclick="window.location.href = window.location.pathname; return false;" style="background-color: #7b0d0c; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: 600; display: inline-block;">Kembali</a>
            </div>
          `;
@@ -109,13 +108,12 @@ function loadPrimaryData() {
   
        loadingTimeoutToken = setTimeout(() => {
          let loadingDesc = document.querySelector('#index-list p'); 
-         
          if (loadingDesc && isFetching) {
            loadingDesc.innerHTML = `Data yang ditarik terlalu banyak. Harap menunggu, 3-5 menit...`;
          }
        }, 5000);
        
-       console.error("Data utama gagal dimuat. Cek koneksi atau server Wikidata.", error);
+       console.error("Data utama gagal dimuat.", error);
     }); 
 }
 
