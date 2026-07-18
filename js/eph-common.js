@@ -532,6 +532,7 @@ function fetchWdqsRaw(query, signal = null) {
 
 async function fetchWdqsRawWithRetry(query, maxRetry = 3, offsetLabel = '', signal = null) {
   for (let attempt = 1; attempt <= maxRetry; attempt++) {
+      if (signal && signal.aborted) throw 'ABORTED'; // TAMBAHKAN pengecekan di awal 
     try {
       if (attempt > 1) {
         let progressText = document.querySelector('#index-list p');
@@ -584,7 +585,8 @@ async function queryWdqsPaginated(queryTemplate, processEachResult, postprocessC
       if (window.hentikanPencarian) break;
 
       let pagedQuery = queryTemplate.replace('<PLACEHOLDER_LIMIT_OFFSET>', `LIMIT ${chunkSize} OFFSET ${offset}`);
-      let bindings = await fetchWdqsRawWithRetry(pagedQuery, 3, ` (data ${offset}-${offset + chunkSize})`);
+
+      let bindings = await fetchWdqsRawWithRetry(pagedQuery, 3, ` (data ${offset}-${offset + chunkSize})`, signal); // TAMBAHKAN signal
       
       if (window.hentikanPencarian) break;
       
