@@ -263,9 +263,17 @@ function populateProvinceTypesData() {
   let provDropdown = document.getElementById('provinsi-input');
   let provInput = provDropdown.value;
   
-  // ==========================================
-  // 1. TENTUKAN VARIABEL GLOBAL & WILAYAH
-  // ==========================================
+  // +++ KUNCI PERBAIKAN: Ambil nama langsung dari HTML +++
+  let jenisDropdown = document.getElementById('jenis-dropdown');
+  let opsiTerpilih = jenisDropdown.options[jenisDropdown.selectedIndex];
+
+  // Tentukan nama klaster berdasarkan teks di dropdown
+  if (jenisDropdown.value === 'custom') {
+    currentNamaKlaster = 'Objek'; // Nama default jika mengetik Q-ID manual
+  } else {
+    currentNamaKlaster = opsiTerpilih.text; // Otomatis mengambil teks seperti "Gereja & katedral", "Masjid", dll.
+  }
+  
   currentKategoriUtama = tentukanKategoriKueri(inputTxt);
   currentNamaKlaster = dapatkanNamaKlaster(inputTxt); 
   
