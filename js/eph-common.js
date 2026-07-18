@@ -250,7 +250,6 @@ loadingTimeoutToken = setTimeout(() => {
 }
 
 function resetApp() {
-  
   currentSearchToken = 0;
   window.hentikanPencarian = false;
 
@@ -258,11 +257,14 @@ function resetApp() {
     clearTimeout(loadingTimeoutToken);
     loadingTimeoutToken = null;
   }
-  if (typeof globalFetchController !== 'undefined') {
-    globalFetchController.abort(); // Tarik pelatuk untuk mematikan fetch background
-    globalFetchController = new AbortController(); // Beri nyawa baru untuk pencarian berikutnya
-  }
+  
   // =========================================================
+  // +++ BUNUH SEMUA KONEKSI YANG SEDANG BERJALAN +++
+  // =========================================================
+  if (typeof globalFetchController !== 'undefined') {
+    globalFetchController.abort(); // Membunuh semua XHR & Fetch serentak!
+    globalFetchController = new AbortController(); // Beri nyawa baru
+  }
 
   let brandingDesc = document.getElementById('branding-desc');
   if (brandingDesc) {
@@ -556,12 +558,16 @@ async function fetchWdqsRawWithRetry(query, maxRetry = 3, offsetLabel = '', sign
         progressText.innerHTML = `<span style="color:#cc0000; font-weight:bold;">Percobaan ${attempt}/${maxRetry} gagal${offsetLabel}. Melakukan penarikan ulang.</span>`;
       }
 
+      // KUNCI PERBAIKAN: Gunakan status AbortSignal murni
       if (attempt === maxRetry) {
-        await new Promise(r => setTimeout(r, 400));
-        if (currentSearchToken !== tiketSaatIni) throw 'ABORTED'; 
+        if (signal && signal.aborted) throw 'ABORTED';
         throw error;
       }
+      
       await new Promise(r => setTimeout(r, 1500 * attempt));
+      
+      // Jaring pengaman ekstra setelah jeda
+      if (signal && signal.aborted) throw 'ABORTED';
     }
   }
 }
