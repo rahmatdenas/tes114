@@ -244,7 +244,7 @@ let whereClause = `
   const klasterBangunan = [
     'Masjid', 'Bangunan bersejarah', 'Gereja & katedral', 'Vihara & kelenteng', 
     'Rumah sakit', 'Universitas & kampus', 'Perpustakaan', 'Istana', 'Bandar udara', 
-    'Terminal bus', 'Stadion & lapangan olahraga', 'Kuil & candi', 'Benteng dan bunker', 
+    'Terminal bus', 'Stadion & lapangan olahraga', 'Kuil & candi', 'Benteng dan bunker', 'Bangunan',
     'Pasar dan mall', 'Hotel dan resor', 'Monumen, patung, & memorial', 'Museum', 'Stasiun kereta api'
   ];
   
