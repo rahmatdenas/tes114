@@ -811,6 +811,13 @@ function activateMapMarker(qid) {
   try {
     Map.closePopup();
 
+    // +++ PATCH: paksa marker masuk cluster kalau belum sempat ditambahkan +++
+    // (mengatasi race condition dengan debounce 150ms di applyIntersectionFilter)
+    if (!Cluster.hasLayer(record.mapMarker)) {
+      Cluster.addLayer(record.mapMarker);
+    }
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     let countSameLocation = 0;
     currentFilteredRecords.forEach(r => {
       if (r.lat === record.lat && r.lon === record.lon) {
@@ -821,10 +828,7 @@ function activateMapMarker(qid) {
     if (countSameLocation > 60) {
       Map.setView([record.lat, record.lon], TILE_LAYER_MAX_ZOOM);
       setTimeout(() => {
-        // --- KUNCI PENANGKAL 1 ---
-        // Kalau URL sudah bukan QID ini lagi (misal user udah klik Hasil), batalkan efeknya!
         if (window.location.hash !== '#' + qid) return;
-        
         let visibleParent = Cluster.getVisibleParent(record.mapMarker);
         if (visibleParent && visibleParent._icon) {
           visibleParent._icon.classList.add('cluster-efek-denyut');
@@ -834,21 +838,15 @@ function activateMapMarker(qid) {
         }
       }, 350);
     } else {
-      if (Cluster.hasLayer(record.mapMarker)) {
-        Cluster.zoomToShowLayer(
-          record.mapMarker,
-          function() {
-            // --- KUNCI PENANGKAL 2 ---
-            // Kalau animasi mekar selesai tapi user udah balik ke Index, JANGAN buka popup!
-            if (window.location.hash !== '#' + qid) return;
-
-            if (!record.popup.isOpen()) record.mapMarker.openPopup();
-          }
-        );
-      } else {
-        Map.setView([record.lat, record.lon], Map.getZoom());
-        if (!record.popup.isOpen()) record.mapMarker.openPopup();
-      }
+      // Sekarang cabang else "marker belum di cluster" tidak diperlukan lagi,
+      // karena sudah dijamin ada lewat guard di atas.
+      Cluster.zoomToShowLayer(
+        record.mapMarker,
+        function() {
+          if (window.location.hash !== '#' + qid) return;
+          if (!record.popup.isOpen()) record.mapMarker.openPopup();
+        }
+      );
     }
   } catch (error) {
     console.warn("Interupsi animasi peta dicegat:", error);
