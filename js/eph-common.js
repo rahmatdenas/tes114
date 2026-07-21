@@ -811,12 +811,7 @@ function activateMapMarker(qid) {
   try {
     Map.closePopup();
 
-    // +++ PATCH: paksa marker masuk cluster kalau belum sempat ditambahkan +++
-    // (mengatasi race condition dengan debounce 150ms di applyIntersectionFilter)
-    if (!Cluster.hasLayer(record.mapMarker)) {
-      Cluster.addLayer(record.mapMarker);
-    }
-    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // PATCH TELAH DIHAPUS DARI SINI
 
     let countSameLocation = 0;
     currentFilteredRecords.forEach(r => {
@@ -838,8 +833,6 @@ function activateMapMarker(qid) {
         }
       }, 350);
     } else {
-      // Sekarang cabang else "marker belum di cluster" tidak diperlukan lagi,
-      // karena sudah dijamin ada lewat guard di atas.
       Cluster.zoomToShowLayer(
         record.mapMarker,
         function() {
