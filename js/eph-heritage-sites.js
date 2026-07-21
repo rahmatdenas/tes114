@@ -1093,26 +1093,17 @@ if (currentUsiaFilter !== 'all') {                 // ganti dari .startsWith('us
 
   renderNextChunk();
   updateFeatureCounts(validRecords.length);
+validRecords.forEach(record => {
+    if (record.mapMarker) validMarkers.push(record.mapMarker);
+  });
 
-  // +++ KUNCI PENGAMAN (Debounce) +++
-  if (renderTimeoutToken) {
-    clearTimeout(renderTimeoutToken);
-  }
-
-  renderTimeoutToken = setTimeout(() => {
-    validRecords.forEach(record => {
-      if (record.mapMarker) validMarkers.push(record.mapMarker);
-    });
-
-    if (validMarkers.length > 0) {
-      Cluster.addLayers(validMarkers);
-      if (!preventZoom) {
-        Map.flyToBounds(Cluster.getBounds(), { duration: 0.5 });
-      }
+  if (validMarkers.length > 0) {
+    // Eksekusi langsung tanpa ditunda (tanpa setTimeout/debounce)
+    Cluster.addLayers(validMarkers);
+    if (!preventZoom) {
+      Map.flyToBounds(Cluster.getBounds(), { duration: 0.5 });
     }
-    
-    renderTimeoutToken = null; 
-  }, 150); 
+  }
 }
 
 function generateRecordDetails(qid) {
