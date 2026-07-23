@@ -1,9 +1,20 @@
 'use strict';
 
-const CHUNK_SIZE = 35;
+// =========================================================
+// VARIABEL GLOBAL FILTER & RENDERING
+// =========================================================
+const CHUNK_SIZE = 35; // Mempertahankan settingan asli Anda
 var currentRenderIndex = 0;
 var currentFilteredRecords = [];
 var isFilterEventAttached = false; 
+
+// --- Tambahan Variabel yang Sempat Hilang ---
+var currentRegionFilter = 'all';
+var currentUsiaFilter = 'default';
+var currentSearchQuery = ''; // <-- Ini yang menyelesaikan eror barusan
+var activeFeatures = new Set();
+var userLocation = null;
+var userRadiusCircle = null;
 
 // Fungsi pembelah array menjadi potongan kecil (Batching)
 function potongJadiKelompok(array, ukuran) {
