@@ -235,20 +235,24 @@ function setupLandingForm() {
     });
   }
 
-  // C. Logika Benua -> Negara
+ // C. Logika Benua -> Negara (Berbasis HTML optgroup)
   if (benuaInput && negaraInput) {
     benuaInput.addEventListener('change', function() {
       let benuaTerpilih = this.value;
-      negaraInput.innerHTML = '<option value="" disabled selected>-- Pilih Negara --</option>';
       
-      if (DATA_LUAR_NEGERI[benuaTerpilih]) {
-        DATA_LUAR_NEGERI[benuaTerpilih].negara.forEach(n => {
-          let opt = document.createElement('option');
-          opt.value = n.id;
-          opt.textContent = n.nama;
-          negaraInput.appendChild(opt);
-        });
-      }
+      // Tampilkan hanya optgroup yang sesuai dengan benua, sembunyikan yang lain
+      Array.from(negaraInput.getElementsByTagName('optgroup')).forEach(group => {
+        if (group.id === 'opt-' + benuaTerpilih) {
+          group.style.display = '';
+        } else {
+          group.style.display = 'none';
+        }
+      });
+      
+      // Reset pilihan negara ke default setiap kali benua diganti
+      negaraInput.value = '';
+    });
+  }
     });
   }
 
