@@ -253,8 +253,6 @@ function setupLandingForm() {
       negaraInput.value = '';
     });
   }
-    });
-  }
 
   // D. Pembersihan Input Wilayah Kustom
   let inputKustomQid = document.getElementById('wilayah-kustom-qid');
