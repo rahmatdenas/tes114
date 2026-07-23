@@ -789,4 +789,469 @@ function queryOsm(qid) {
     });
 }
 
-// ... Sisa fungsi JS 3 Anda (Helper metadata, lightbox) tidak perlu diubah, bisa dibiarkan ...
+// =========================================================
+// FUNGSI PEMBANTU, RENDER DOM, & DEKLARASI KELAS (YANG TERHAPUS)
+// =========================================================
+
+function activateMapMarker(qid) {
+  let record = Records[qid];
+  if (!record.mapMarker) return; 
+
+  if (record.popup && record.popup.isOpen()) return;
+
+  try {
+    Map.closePopup();
+    Cluster.zoomToShowLayer(
+      record.mapMarker,
+      function() {
+        if (window.location.hash !== '#' + qid) return;
+        if (!record.popup.isOpen()) record.mapMarker.openPopup();
+      }
+    );
+  } catch (error) {
+    console.warn("Interupsi animasi peta dicegat:", error);
+  }
+}
+
+function displayRecordDetails(qid) {
+  if (currentDisplayedQid === qid) return; 
+  currentDisplayedQid = qid;
+  let record = Records[qid];
+  document.title = `${record.indexTitle} – ${BASE_TITLE}`;
+
+  if (record._gagalOffline) {
+    record.panelElem = undefined;
+    record._gagalOffline = false; 
+  }
+  
+  if (PrimaryDataIsLoaded) {
+    if (currentActiveShapeLayer) Map.removeLayer(currentActiveShapeLayer);
+    if (record.shapeLayer) {
+      record.shapeLayer.addTo(Map);
+      currentActiveShapeLayer = record.shapeLayer;
+    }
+
+    if (!record.panelElem) {
+      generateRecordDetails(qid);
+      if (typeof populateImportantEventsData === 'function') populateImportantEventsData(qid);
+      if (typeof populateHistoricalImagesData === 'function') populateHistoricalImagesData(qid);
+    }
+    
+    let detailsElem = document.getElementById('details');
+    detailsElem.innerHTML = ''; 
+    detailsElem.appendChild(record.panelElem);
+
+    let stuckImages = record.panelElem.querySelectorAll('img.loading');
+    stuckImages.forEach(img => {
+      if (!img.complete || img.naturalWidth === 0) {
+        let currentSrc = img.src;
+        img.src = ''; 
+        img.src = currentSrc; 
+      }
+    });
+    
+    let stuckCaptions = record.panelElem.querySelectorAll('figcaption');
+    stuckCaptions.forEach(caption => {
+      if (caption.textContent.includes('(Memuat…)')) {
+        let encodedFile = caption.getAttribute('data-filename');
+        if (encodedFile) tarikMetadataCaption(encodedFile, null, caption);
+      }
+    });
+    displayPanelContent('details');
+  } else {
+    displayPanelContent('loading');
+  }
+}
+
+function generateFigure(filename, title = "Situs", classNames = []) {
+  if (filename) {
+    let uniqueId = 'caption-' + Math.random().toString(36).substr(2, 9);
+    let encodedFilename = encodeURIComponent(filename);
+    tarikMetadataCaption(encodedFilename, uniqueId, null);
+
+    return (
+      `<figure class="${classNames.join(' ')}">` +
+        `<a href="${COMMONS_WIKI_URL_PREF}File:${encodedFilename}" target="_blank">` +
+          `<img class="loading" src="${COMMONS_WIKI_URL_PREF}Special:FilePath/${encodedFilename}?width=500" alt="" onload="this.className=''">` +
+        '</a>' +
+        `<figcaption id="${uniqueId}" data-filename="${encodedFilename}">(Memuat…)</figcaption>` +
+      '</figure>'
+    );
+  } else {
+    let namaAmanURL = encodeURIComponent(title);
+    let gFormFotoUrl = `https://docs.google.com/forms/d/e/1FAIpQLSd7_u-7yCwDtXIkDO--bILry6mWGoRCnnfSumL_PEjfle0aLg/viewform?usp=pp_url&entry.2138396049=${namaAmanURL}`;
+    return `<figure class="${classNames.join(' ')} nodata">Belum ada foto. <a href="${gFormFotoUrl}" target="_blank" rel="noopener noreferrer" style="border:none;" class="sunting-linktambah">Tambahkan!</a></figure>`;
+  }
+}
+
+function extractImageFilename(image) {
+  let regex = /https?:\/\/commons\.wikimedia\.org\/wiki\/Special:FilePath\//;
+  return decodeURIComponent(image.value.replace(regex, ''));
+}
+
+function tarikMetadataCaption(filename, targetId, targetNode = null) {
+  let url = new URL(COMMONS_API_URL);
+  let params = {
+    action: 'query', format: 'json', prop: 'imageinfo',
+    iiprop: 'extmetadata', titles: 'File:' + decodeURIComponent(filename), origin: '*'
+  };
+  Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+  let fetchOptions = {};
+  if (!targetNode && typeof globalFetchController !== 'undefined') {
+    fetchOptions.signal = globalFetchController.signal;
+  }
+
+  fetch(url, fetchOptions)
+    .then(res => res.ok ? res.json() : Promise.reject())
+    .then(data => {
+      let pages = data.query.pages;
+      let page = Object.values(pages)[0];
+      let targetCaption = targetNode || document.getElementById(targetId);
+      if (!targetCaption) return;
+
+      if (page.imageinfo && page.imageinfo[0].extmetadata) {
+        let metadata = page.imageinfo[0].extmetadata;
+        let artistHtml = metadata.Artist ? metadata.Artist.value.trim().replace(/<(?!\/?a ?)[^>]+>/g, '').replace(/Unknown authorUnknown author|UnknownUnknown/gi, 'Tak diketahui').replace(/AnonymousUnknown author/gi, 'Anonim') : '';
+        if (artistHtml.includes('href="//')) artistHtml = artistHtml.replace(/href="(?:https?:)?\/\//g, 'href="https://');
+        artistHtml = artistHtml.replace(/<a /gi, '<a target="_blank" ');
+
+        let licenseHtml = '';
+        if (metadata.AttributionRequired && metadata.AttributionRequired.value === 'true') {
+          licenseHtml = metadata.LicenseShortName.value.replace(/ /g, ' ').replace(/-/g, '‑');
+          licenseHtml = metadata.LicenseUrl ? ` <a href="${metadata.LicenseUrl.value}" target="_blank">[${licenseHtml}]</a>` : ` [${licenseHtml}]`;
+        }
+        targetCaption.innerHTML = artistHtml + licenseHtml;
+      } else {
+        targetCaption.innerHTML = 'Data lisensi tidak tersedia.';
+      }
+    })
+    .catch(error => {
+      if (error.name === 'AbortError') return;
+      let targetCaption = targetNode || document.getElementById(targetId);
+      if (targetCaption) targetCaption.innerHTML = 'Data gagal dimuat.';
+    });
+}
+
+function updateFeatureCounts(totalValidRecords) {
+  let searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.placeholder = `Menampilkan ${totalValidRecords} hasil (atau ketik yang dicari)`;
+  }
+}
+
+function displayArticleExtract(title, elem) {
+  let url = new URL('https://id.wikipedia.org/w/api.php');
+  let params = {
+    action: 'query', format: 'json', prop: 'extracts',
+    exintro: 1, redirects: true, titles: title, origin: '*' 
+  };
+  Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+  fetch(url, { signal: globalFetchController.signal })
+    .then(response => response.ok ? response.json() : Promise.reject())
+    .then(data => {
+      if (!data.query || !data.query.pages) throw new Error('Struktur data Wikipedia tidak ditemukan');
+      let rawExtract = Object.values(data.query.pages)[0].extract || '';
+      
+      let kumpulanParagraf = rawExtract.match(/<p[^>]*>[\s\S]+?<\/p>/g);
+      let paragrafPilihan = kumpulanParagraf ? kumpulanParagraf.find(text => text.length > 50) : null;
+
+      if (paragrafPilihan) {
+        paragrafPilihan = paragrafPilihan.replace(/^<p[^>]*>(\s|<br\s*\/?>| )*/i, '<p>');
+        paragrafPilihan = paragrafPilihan.replace(/<span[^>]*>[^<]*code:\s*[a-z\-]+\s*is deprecated[^<]*<\/span>/gi, '');
+        paragrafPilihan = paragrafPilihan.replace(/<[^>]*>[^<]*(is deprecated|Lua error|Script error)[^<]*<\/[^>]*>/gi, '');
+      } else {
+        paragrafPilihan = '<p>Ringkasan artikel belum memadai.</p>'; 
+      }
+
+      if (elem) {
+        elem.innerHTML = paragrafPilihan +
+          '<p class="wikipedia-link">' +
+            `<a href="https://id.wikipedia.org/wiki/${encodeURIComponent(title)}" target="_blank">` +
+              '<img src="img/wikipedia_tiny_logo.png" alt="" />' +
+              '<span>Baca selengkapnya di Wikipedia</span>' +
+            '</a>' +
+          '</p>';
+        elem.classList.remove('loading');
+      }
+    })
+    .catch(error => {
+      if (error.name === 'AbortError') return;
+      if (elem) {
+        elem.innerHTML = '<p class="nodata" style="color:#cc0000; margin-top:10px;">Gagal memuat ringkasan artikel.</p>';
+        elem.classList.remove('loading');
+      }
+    });
+}
+
+function renderNextChunk() {
+  let ol = document.getElementById('index-list');
+  if (!ol) return;
+
+  let nextBatch = currentFilteredRecords.slice(currentRenderIndex, currentRenderIndex + CHUNK_SIZE);  
+  if (nextBatch.length === 0) return;
+  
+  let fragment = document.createDocumentFragment();
+  nextBatch.forEach(record => {
+    if (record.indexLi) {
+      record.indexLi.style.display = '';
+      fragment.appendChild(record.indexLi);
+    }
+  });
+
+  ol.appendChild(fragment);
+  currentRenderIndex += CHUNK_SIZE; 
+}
+
+let scrollContainer = document.getElementById('index-container'); 
+if (scrollContainer) {
+  scrollContainer.addEventListener('scroll', function() {
+    if (this.scrollTop + this.clientHeight >= this.scrollHeight - 10) {
+      renderNextChunk(); 
+    }
+  });
+}
+
+function renderHistoricalImagesInPanel(qid) {
+  let record = Records[qid];
+  if (!record.panelElem) return;
+  let container = record.panelElem.querySelector(`#arsip-container-${qid}`);
+  if (!container) return; 
+
+  let html = '';
+  
+  function buildImageBlock(imgObj, teksPengganti) {
+    let block = '<div class="arsip-block" style="overflow: hidden;">';
+    block += generateFigure(imgObj.file);
+    if (imgObj.caption && imgObj.caption.trim() !== '') {
+      block += `<div class="article main-text"><p>${imgObj.caption}</p></div>`;
+    } else {
+      block += `<div class="article main-text nodata"><p>${teksPengganti}</p></div>`;
+    }
+    block += '</div>';
+    return block;
+  }
+
+  if (record.pastImage) html += buildImageBlock(record.pastImage, 'Suasana/bentuk/tampilan sebelumnya');
+  if (record.interiorImage) html += buildImageBlock(record.interiorImage, 'Pemandangan di dalam');
+  if (record.vicinityImages && record.vicinityImages.length > 0) {
+    record.vicinityImages.forEach(imgObj => {
+      html += buildImageBlock(imgObj, 'Objek di sekitar');
+    });
+  }
+
+  if (record.commonsCat) {
+    html += '<h2 style="margin-top:10px; margin-bottom: 7px;">Galeri lainnya</h2>';
+    html += 
+      '<p class="wikipedia-link" style="margin-bottom: 0;">' +
+        `<a href="https://commons.wikimedia.org/wiki/Category:${encodeURIComponent(record.commonsCat)}" target="_blank">` +
+          '<img src="img/wikicommons_tiny_logo.png" alt="" />' +
+          '<span>Lihat di Wikimedia Commons</span>' +
+        '</a>' +
+      '</p>';
+  }
+
+  if (html !== '') {
+    let wikiUrlGaleri = `https://www.wikidata.org/wiki/${qid}#P18`;
+    let tautanSuntingGaleri = `<a href="${wikiUrlGaleri}" target="_blank" class="sunting-link" title="Sunting data galeri di Wikidata" aria-label="Sunting data galeri di Wikidata"></a>`;
+    
+    let judulGaleriUtama = '';
+    if (record.pastImage || record.interiorImage || (record.vicinityImages && record.vicinityImages.length > 0)) {
+      judulGaleriUtama = `<h2 style="margin-top:10px;margin-bottom:10px;">Galeri ${tautanSuntingGaleri}</h2>`;
+    }
+    
+    container.innerHTML = judulGaleriUtama + html;
+    container.classList.remove('loading');
+  } else {
+    container.innerHTML = '';
+    container.classList.remove('loading');
+    container.style.display = 'none';
+  }
+}
+
+function populateProvinceIndex() {
+  if (!ProvinceIndex['all']) ProvinceIndex['all'] = new ProvinceIndexEntry();
+
+  Object.values(Records).forEach(record => {
+    ProvinceIndex['all'].total++;
+    Object.keys(record.designations).forEach(provQid => {
+      if (!ProvinceIndex[provQid]) {
+        ProvinceIndex[provQid] = new ProvinceIndexEntry();
+        ProvinceIndex[provQid].name = record.designations[provQid];
+      }
+      ProvinceIndex[provQid].total++;
+    });
+  });
+}
+
+function populateMapAndIndex() {
+  let listIndex = document.getElementById('index-list');
+  let mapMarkers = [];
+  
+  Object.entries(Records).forEach(entry => {
+    let qid = entry[0], record = entry[1];
+    
+    if (!record.isCompound && record.lat && record.lon) {
+      let mapMarker = L.marker(
+        [record.lat, record.lon],
+        { icon: ikonTetesanAir }
+      );
+      record.mapMarker = mapMarker;
+      
+      mapMarker.bindPopup(record.title, { 
+        closeButton: false,
+        maxWidth: 200 
+      });
+
+      mapMarker.togglePopup = function() {
+        if (!this.isPopupOpen()) this.openPopup();
+      };
+
+      mapMarker.on('mousedown touchstart', function() {
+        this._bukaSaatDisentuh = this.isPopupOpen();
+      });
+
+      mapMarker.on('click', function() {
+        if (this._bukaSaatDisentuh && typeof window.setMobilePanelExpanded === 'function') {
+          window.setMobilePanelExpanded(true, true);
+        }
+      });
+      mapMarker.on('dblclick', function(e) {
+        L.DomEvent.stopPropagation(e);
+        if (typeof window.setMobilePanelExpanded === 'function') {
+          window.setMobilePanelExpanded(true, true);
+        }
+      });
+      
+      let popup = mapMarker.getPopup();
+      popup._qid = qid;
+      record.popup = popup;
+      mapMarkers.push(mapMarker);
+    }
+    
+    let li = document.createElement('li');
+    let a = document.createElement('a');
+    a.href = '#' + qid;
+    a.textContent = record.indexTitle; 
+    li.appendChild(a);
+    record.indexLi = li;
+  });
+  
+  populateProvinceIndexNodes(); 
+  generateFilterSelect();
+}
+
+function populateProvinceIndexNodes() {
+  Object.values(Records).forEach(record => {
+    if (record.mapMarker) ProvinceIndex['all'].mapMarkers.push(record.mapMarker);
+    ProvinceIndex['all'].indexLis.push(record.indexLi);
+    
+    Object.keys(record.designations).forEach(provQid => {
+      if (ProvinceIndex[provQid]) {
+        if (record.mapMarker) ProvinceIndex[provQid].mapMarkers.push(record.mapMarker);
+        ProvinceIndex[provQid].indexLis.push(record.indexLi);
+      }
+    });
+  });
+  
+  Object.values(ProvinceIndex).forEach(indexItem => {
+    indexItem.indexLis = indexItem.indexLis
+      .map(li => [li, li.textContent])
+      .sort((a, b) => a[1] > b[1] ? 1 : -1)
+      .map(item => item[0]);
+  });
+}
+
+function jalankanFilterGPS(selectElem) {
+  selectElem.options[selectElem.selectedIndex].text = "⏳ Mencari satelit GPS...";
+  let konfigurasiZoomAsli = window.TombolGPSMap.options.setView;
+  window.TombolGPSMap.options.setView = false; 
+  window.TombolGPSMap.start();
+
+  Map.once('locationfound', function(e) {
+    window.TombolGPSMap.options.setView = konfigurasiZoomAsli;
+    userLocation = { lat: e.latlng.lat, lon: e.latlng.lng };
+    selectElem.options[selectElem.selectedIndex].text = "Sekitar Anda (Radius 10 km)";
+    currentRegionFilter = 'terdekat';
+
+    if (userRadiusCircle) Map.removeLayer(userRadiusCircle);
+    userRadiusCircle = L.circle([userLocation.lat, userLocation.lon], {
+      color: 'transparent', fillColor: '#882222', fillOpacity: 0.1, radius: 10000
+    }).addTo(Map);
+
+    Map.fitBounds(userRadiusCircle.getBounds());
+    applyIntersectionFilter();
+  });
+
+  Map.once('locationerror', function(e) {
+    window.TombolGPSMap.options.setView = konfigurasiZoomAsli;
+    window.TombolGPSMap.stop(); 
+    alert("Akses lokasi gagal atau ditolak. Pastikan GPS HP Anda menyala.");
+    batalkanFilterGPS(selectElem);
+  });
+}
+
+function batalkanFilterGPS(selectElem) {
+  if (window.TombolGPSMap) window.TombolGPSMap.stop();
+  Map.off('locationfound');
+  Map.off('locationerror');
+  if (userRadiusCircle) Map.removeLayer(userRadiusCircle);
+
+  selectElem.value = 'all';
+  currentRegionFilter = 'all';
+  userLocation = null;
+
+  let opsi = Array.from(selectElem.options).find(opt => opt.value === 'terdekat');
+  if (opsi) opsi.text = "Sekitar Anda (Radius 10 km)";
+  applyIntersectionFilter();
+}
+
+// =========================================================
+// DEKLARASI KELAS DATA (CLASS)
+// =========================================================
+
+class ProvinceIndexEntry {
+  constructor() {
+    this.name       = '';
+    this.total      = 0;
+    this.mapMarkers = [];
+    this.indexLis   = [];
+  }
+}
+
+class Record {
+  constructor(isCompound) {
+    this.isCompound = isCompound;
+    this.title = undefined;
+    this.imageFilename = '';
+    this.articleTitle = undefined;
+    this.designations = {}; 
+    this.panelElem = undefined;
+    this.indexLi = undefined;
+    this.tahunBerdiri = undefined;
+    this.rawTahunBerdiri = undefined;
+    this.events = [];
+    this.areaTags = new Set();
+    this.vicinityImages = [];
+    this.interiorImage = undefined;
+  }
+}
+
+class SimpleRecord extends Record {
+  constructor() {
+    super(false);
+    this.lat        = undefined;
+    this.lon        = undefined;
+    this.mapMarker  = undefined;
+    this.popup      = undefined;
+    this.shapeLayer = undefined;
+  }
+}
+
+class CompoundRecord extends Record {
+  constructor() {
+    super(true);
+    this.parts = []; 
+  }
+}
