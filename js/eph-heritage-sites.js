@@ -10,7 +10,7 @@ var isFilterEventAttached = false;
 
 // --- Tambahan Variabel yang Sempat Hilang ---
 var currentRegionFilter = 'all';
-var currentUsiaFilter = 'default';
+var currentUsiaFilter = 'all';
 var currentSearchQuery = ''; // <-- Ini yang menyelesaikan eror barusan
 var activeFeatures = new Set();
 var userLocation = null;
@@ -691,7 +691,7 @@ function applyIntersectionFilter(preventZoom = false) {
 
 function generateFilterSelect() {
   currentRegionFilter = 'all';
-  currentUsiaFilter = 'default';
+  currentUsiaFilter = 'all'; // <-- DIPERBAIKI DI SINI
   activeFeatures.clear();
   currentSearchQuery = '';
 
@@ -710,7 +710,6 @@ function generateFilterSelect() {
     gpsOpt.textContent = '📍 Cari di Sekitar Anda...';
     filterSelect.appendChild(gpsOpt);
 
-    // Looping data wilayah dari proses tarikan data sebelumnya
     let sortedProvinces = Object.keys(ProvinceIndex)
       .filter(k => k !== 'all')
       .map(k => ({ id: k, name: ProvinceIndex[k].name }))
@@ -739,7 +738,7 @@ function generateFilterSelect() {
   // 2. RENDER FILTER UMUR/TAHUN KOMBUNASI
   let selectKombinasi = document.getElementById('filter-sort-kombinasi');
   if (selectKombinasi) {
-    selectKombinasi.value = 'default';
+    selectKombinasi.value = 'all'; // <-- DIPERBAIKI DI SINI (Sesuaikan dengan HTML Anda)
     if (typeof currentKategoriUtama !== 'undefined' && currentKategoriUtama === 'alam') {
       selectKombinasi.style.display = 'none';
     } else {
@@ -768,7 +767,7 @@ function generateFilterSelect() {
     });
   }
 
-  // 4. AKTIFKAN TOMBOL FILTER (GAMBAR & ARTIKEL)
+  // 4. AKTIFKAN TOMBOL FILTER
   if (!isFilterEventAttached) {
     let filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
@@ -776,23 +775,21 @@ function generateFilterSelect() {
         e.preventDefault();
         
         if (this.id === 'btn-all') {
-          // Reset semua filter
           activeFeatures.clear();
           currentRegionFilter = 'all';
-          currentUsiaFilter = 'default';
+          currentUsiaFilter = 'all'; // <-- DIPERBAIKI DI SINI
           currentSearchQuery = '';
           if (filterSelect) filterSelect.value = 'all';
-          if (selectKombinasi) selectKombinasi.value = 'default';
+          if (selectKombinasi) selectKombinasi.value = 'all'; // <-- DIPERBAIKI DI SINI
           if (searchInput) searchInput.value = '';
           
           filterBtns.forEach(b => b.classList.remove('active'));
           this.classList.add('active');
         } else {
-          // Matikan tombol "Semua Hasil" jika filter spesifik diklik
           let btnAll = document.getElementById('btn-all');
           if (btnAll) btnAll.classList.remove('active');
           
-          let feature = this.getAttribute('data-filter'); // 'image' atau 'article'
+          let feature = this.getAttribute('data-filter'); 
           if (this.classList.contains('active')) {
             this.classList.remove('active');
             activeFeatures.delete(feature);
@@ -801,7 +798,7 @@ function generateFilterSelect() {
             activeFeatures.add(feature);
           }
         }
-        applyIntersectionFilter(); // Jalankan penyaringan
+        applyIntersectionFilter(); 
       });
     });
   }
