@@ -691,32 +691,121 @@ function applyIntersectionFilter(preventZoom = false) {
 
 function generateFilterSelect() {
   currentRegionFilter = 'all';
-  currentUsiaFilter = 'all';
+  currentUsiaFilter = 'default';
   activeFeatures.clear();
   currentSearchQuery = '';
 
+  // 1. RENDER DROPDOWN WILAYAH BERDASARKAN DATA PROVINSI
+  let filterSelect = document.getElementById('filter-select');
+  if (filterSelect) {
+    filterSelect.innerHTML = ''; 
+    
+    let defaultOpt = document.createElement('option');
+    defaultOpt.value = 'all';
+    defaultOpt.textContent = 'Semua Wilayah';
+    filterSelect.appendChild(defaultOpt);
+
+    let gpsOpt = document.createElement('option');
+    gpsOpt.value = 'terdekat';
+    gpsOpt.textContent = '📍 Cari di Sekitar Anda...';
+    filterSelect.appendChild(gpsOpt);
+
+    // Looping data wilayah dari proses tarikan data sebelumnya
+    let sortedProvinces = Object.keys(ProvinceIndex)
+      .filter(k => k !== 'all')
+      .map(k => ({ id: k, name: ProvinceIndex[k].name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedProvinces.forEach(prov => {
+      let opt = document.createElement('option');
+      opt.value = prov.id;
+      opt.textContent = prov.name;
+      filterSelect.appendChild(opt);
+    });
+
+    if (!isFilterEventAttached) {
+      filterSelect.addEventListener('change', function() {
+        if (this.value === 'terdekat') {
+          jalankanFilterGPS(this);
+        } else {
+          if (currentRegionFilter === 'terdekat') batalkanFilterGPS(this);
+          currentRegionFilter = this.value;
+          applyIntersectionFilter();
+        }
+      });
+    }
+  }
+
+  // 2. RENDER FILTER UMUR/TAHUN KOMBUNASI
   let selectKombinasi = document.getElementById('filter-sort-kombinasi');
   if (selectKombinasi) {
     selectKombinasi.value = 'default';
-    
-    if (currentKategoriUtama === 'alam') {
+    if (typeof currentKategoriUtama !== 'undefined' && currentKategoriUtama === 'alam') {
       selectKombinasi.style.display = 'none';
     } else {
       selectKombinasi.style.display = ''; 
     }
+
+    if (!isFilterEventAttached) {
+      selectKombinasi.addEventListener('change', function() {
+        currentUsiaFilter = this.value;
+        applyIntersectionFilter();
+      });
+    }
   }
+
+  // 3. AKTIFKAN KOLOM PENCARIAN TEKS
   let searchInput = document.getElementById('search-input');
   if (searchInput && !isFilterEventAttached) {
+    searchInput.value = '';
     searchInput.addEventListener('input', function() {
       currentSearchQuery = this.value.trim().toLowerCase().replace(/[-'\s]/g, '');
-      if (searchDebounceToken) clearTimeout(searchDebounceToken);
+      if (window.searchDebounceToken) clearTimeout(window.searchDebounceToken);
       
-      searchDebounceToken = setTimeout(() => {
-        // Yield to Main Thread agar tidak freeze
+      window.searchDebounceToken = setTimeout(() => {
         requestAnimationFrame(() => applyIntersectionFilter());
       }, 350);
     });
   }
+
+  // 4. AKTIFKAN TOMBOL FILTER (GAMBAR & ARTIKEL)
+  if (!isFilterEventAttached) {
+    let filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (this.id === 'btn-all') {
+          // Reset semua filter
+          activeFeatures.clear();
+          currentRegionFilter = 'all';
+          currentUsiaFilter = 'default';
+          currentSearchQuery = '';
+          if (filterSelect) filterSelect.value = 'all';
+          if (selectKombinasi) selectKombinasi.value = 'default';
+          if (searchInput) searchInput.value = '';
+          
+          filterBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+        } else {
+          // Matikan tombol "Semua Hasil" jika filter spesifik diklik
+          let btnAll = document.getElementById('btn-all');
+          if (btnAll) btnAll.classList.remove('active');
+          
+          let feature = this.getAttribute('data-filter'); // 'image' atau 'article'
+          if (this.classList.contains('active')) {
+            this.classList.remove('active');
+            activeFeatures.delete(feature);
+          } else {
+            this.classList.add('active');
+            activeFeatures.add(feature);
+          }
+        }
+        applyIntersectionFilter(); // Jalankan penyaringan
+      });
+    });
+  }
+
   isFilterEventAttached = true;
 }
 
