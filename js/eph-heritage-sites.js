@@ -689,10 +689,22 @@ function applyIntersectionFilter(preventZoom = false) {
   }
 }
 
-// Event Listeners (Debounce Search)
 function generateFilterSelect() {
-  // ... [Kode UI Generate Option Filter Sama seperti JS 3 Lama] ...
-  // BAGIAN SEARCH DEBOUNCE DIPERBAIKI:
+  currentRegionFilter = 'all';
+  currentUsiaFilter = 'all';
+  activeFeatures.clear();
+  currentSearchQuery = '';
+
+  let selectKombinasi = document.getElementById('filter-sort-kombinasi');
+  if (selectKombinasi) {
+    selectKombinasi.value = 'default';
+    
+    if (currentKategoriUtama === 'alam') {
+      selectKombinasi.style.display = 'none';
+    } else {
+      selectKombinasi.style.display = ''; 
+    }
+  }
   let searchInput = document.getElementById('search-input');
   if (searchInput && !isFilterEventAttached) {
     searchInput.addEventListener('input', function() {
