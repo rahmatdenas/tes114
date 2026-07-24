@@ -601,93 +601,124 @@ function renderDynamicDataInPanel(qid) {
   }
 }
 
+// ==========================================
+// 1. MESIN FILTER ANTI-BADAI
+// ==========================================
 function applyIntersectionFilter(preventZoom = false) {
-  if (!PrimaryDataIsLoaded) return;
+  try {
+    // Bersihkan Peta dan Panel Index terlebih dahulu
+    if (typeof Cluster !== 'undefined' && Cluster) Cluster.clearLayers();
+    let indexListElem = document.getElementById('index-list');
+    if (indexListElem) indexListElem.innerHTML = '';
 
-  Cluster.clearLayers();
-  document.getElementById('index-list').innerHTML = '';
+    let validMarkers = [];
+    let btnAll = document.getElementById('btn-all');
 
-  let validMarkers = [];
-  let btnAll = document.getElementById('btn-all');
-  
-  if (btnAll) {
-    if (currentSearchQuery === '' && currentRegionFilter === 'all' && currentUsiaFilter === 'all' && activeFeatures.size === 0) {
-      btnAll.classList.add('active'); btnAll.textContent = 'Semua Hasil'; 
-    } else {
-      btnAll.classList.remove('active'); btnAll.textContent = 'Pulihkan'; 
+    if (btnAll) {
+      if (currentSearchQuery === '' && currentRegionFilter === 'all' && currentUsiaFilter === 'all' && activeFeatures.size === 0) {
+        btnAll.classList.add('active'); btnAll.textContent = 'Semua Hasil'; 
+      } else {
+        btnAll.classList.remove('active'); btnAll.textContent = 'Pulihkan'; 
+      }
     }
-  }
 
-  // 1. OPTIMASI: PENCARIAN & TAHUN DILAKUKAN SEKALI (PRE-COMPUTED)
-  let cleanQuery = currentSearchQuery; 
-  let currentYear = new Date().getFullYear();
+    let cleanQuery = (currentSearchQuery || '').toLowerCase();
+    let currentYear = new Date().getFullYear();
 
-  let validRecords = Object.values(Records).filter(record => {
-    let matchRegion = false;
-    
-    if (currentRegionFilter === 'all') matchRegion = true;
-    else if (currentRegionFilter === 'terdekat') {
-      if (userLocation && record.lat && record.lon) {
-        let jarakMeter = Map.distance([userLocation.lat, userLocation.lon], [record.lat, record.lon]);
-        if (jarakMeter <= 10000) { 
-          record.jarakDariUser = (jarakMeter / 1000).toFixed(1); 
+    // Loop Penyaringan Utama
+    let validRecords = Object.values(Records).filter(record => {
+      if (!record) return false;
+
+      // --- Filter Wilayah ---
+      let matchRegion = false;
+      if (currentRegionFilter === 'all') {
           matchRegion = true;
+      } else if (currentRegionFilter === 'terdekat') {
+        if (typeof userLocation !== 'undefined' && userLocation && record.lat && record.lon) {
+          let jarakMeter = Map.distance([userLocation.lat, userLocation.lon], [record.lat, record.lon]);
+          if (jarakMeter <= 10000) matchRegion = true;
+        }
+      } else {
+        matchRegion = record.areaTags && record.areaTags.has(currentRegionFilter);
+      }
+
+      // --- Filter Tombol Fitur (Gambar & Artikel) ---
+      let matchFeature = true;
+      if (activeFeatures && activeFeatures.size > 0) {
+        if (activeFeatures.has('image') && !record.imageFilename) matchFeature = false;
+        if (activeFeatures.has('article') && !record.articleTitle) matchFeature = false;
+      }
+
+      // --- Filter Pencarian Teks ---
+      let matchSearch = true;
+      if (cleanQuery !== '') {
+        let sTitle = record.searchTitle || '';
+        matchSearch = sTitle.includes(cleanQuery);
+      }
+
+      // --- Filter Usia / Tahun ---
+      let matchUsia = true;
+      if (currentUsiaFilter && currentUsiaFilter !== 'all' && currentUsiaFilter !== 'default' && currentUsiaFilter.includes('_')) {
+        if (record.parsedYear !== null && record.parsedYear !== undefined) {
+          let parts = currentUsiaFilter.split('_');
+          let tipeFilter = parts[0];
+          let umurStr = parts[1];
+          let batasTahun = currentYear - parseInt(umurStr || 0);
+
+          if (tipeFilter === 'muda') matchUsia = record.parsedYear > batasTahun;
+          else matchUsia = record.parsedYear <= batasTahun;
+        } else {
+          matchUsia = false; // Sembunyikan jika difilter tahun tapi objek tidak punya data tahun
         }
       }
-    } else {
-      matchRegion = record.areaTags.has(currentRegionFilter);
+
+      return matchRegion && matchFeature && matchSearch && matchUsia;
+    });
+
+    // --- Pengurutan (Sorting) ---
+    validRecords.sort((a, b) => {
+      if (currentUsiaFilter && currentUsiaFilter !== 'all' && currentUsiaFilter !== 'default' && currentUsiaFilter.includes('_')) {
+        let aHasYear = (a.parsedYear !== null && a.parsedYear !== undefined);
+        let bHasYear = (b.parsedYear !== null && b.parsedYear !== undefined);
+        if (aHasYear && bHasYear) return a.parsedYear - b.parsedYear;
+        if (aHasYear && !bHasYear) return -1;
+        if (!aHasYear && bHasYear) return 1;
+      }
+      
+      // Fallback urut Abjad dengan pengamanan
+      let titleA = a.indexTitle || '';
+      let titleB = b.indexTitle || '';
+      return titleA.localeCompare(titleB);
+    });
+
+    // Simpan ke array global untuk di-render oleh renderNextChunk
+    currentFilteredRecords = validRecords;
+    currentRenderIndex = 0; 
+    
+    // Panggil fungsi render ke panel kanan
+    renderNextChunk();
+    
+    if (typeof updateFeatureCounts === 'function') {
+      updateFeatureCounts(validRecords.length);
     }
 
-    let matchFeature = true;
-    if (activeFeatures.size > 0) {
-      if (activeFeatures.has('image') && !record.imageFilename) matchFeature = false;
-      if (activeFeatures.has('article') && record.articleTitle === undefined) matchFeature = false;
-    }
+    // --- Update Marker Peta ---
+    validRecords.forEach(record => {
+      if (record.mapMarker) validMarkers.push(record.mapMarker);
+    });
 
-    let matchSearch = true;
-    if (cleanQuery !== '') {
-      matchSearch = record.searchTitle.includes(cleanQuery);
-    }
-
-    let matchUsia = true;
-    if (currentUsiaFilter !== 'all') {
-      if (record.parsedYear !== null) {
-        let [tipeFilter, umurStr] = currentUsiaFilter.split('_');
-        let batasTahun = currentYear - parseInt(umurStr);
-        if (tipeFilter === 'muda') matchUsia = record.parsedYear > batasTahun;
-        else matchUsia = record.parsedYear <= batasTahun;
-      } else {
-        matchUsia = false; 
+    if (validMarkers.length > 0 && typeof Cluster !== 'undefined') {
+      Cluster.addLayers(validMarkers);
+      if (!preventZoom && typeof Map !== 'undefined') {
+          Map.flyToBounds(Cluster.getBounds(), { duration: 0.5 });
       }
     }
-    
-    return matchRegion && matchFeature && matchSearch && matchUsia;
 
-  }).sort((a, b) => {
-    if (currentUsiaFilter !== 'all') {
-      let aHasYear = a.parsedYear !== null;
-      let bHasYear = b.parsedYear !== null;
-      if (aHasYear && bHasYear) return a.parsedYear - b.parsedYear; // Urut absolut number
-      if (aHasYear && !bHasYear) return -1; 
-      if (!aHasYear && bHasYear) return 1;  
-    }
-    return a.indexTitle.localeCompare(b.indexTitle);    
-  });
-
-  currentFilteredRecords = validRecords;
-  currentRenderIndex = 0; 
-  renderNextChunk();
-  updateFeatureCounts(validRecords.length);
-  
-  validRecords.forEach(record => {
-    if (record.mapMarker) validMarkers.push(record.mapMarker);
-  });
-
-  if (validMarkers.length > 0) {
-    Cluster.addLayers(validMarkers);
-    if (!preventZoom) Map.flyToBounds(Cluster.getBounds(), { duration: 0.5 });
+  } catch (error) {
+     console.error("GAGAL SAAT MENJALANKAN FILTER:", error);
   }
 }
+
 
 function generateFilterSelect() {
   currentRegionFilter = 'all';
