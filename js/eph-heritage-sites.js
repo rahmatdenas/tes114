@@ -1036,6 +1036,63 @@ if (scrollContainer) {
   });
 }
 
+function populateHistoricalImagesData(qid) {
+  let record = Records[qid];
+  let queryStr = getSparqlQuery5(qid); 
+
+  record.vicinityImages = [];
+  record.pastImage = undefined;
+  record.interiorImage = undefined; 
+  record.commonsCat = undefined; 
+
+  return queryWdqsThenProcess(
+    queryStr,
+    function(result) {
+      if ('vicinityImage' in result) {
+        let filename = extractImageFilename(result.vicinityImage);
+        let captionText = result.vicinityCaption ? result.vicinityCaption.value : '';
+        
+        let isDuplicate = record.vicinityImages.some(img => img.file === filename);
+        if (!isDuplicate) {
+          record.vicinityImages.push({ file: filename, caption: captionText });
+        }
+      }
+      
+      if ('pastImage' in result) {
+        if (!record.pastImage) { 
+          let filename = extractImageFilename(result.pastImage);
+          let captionText = result.pastCaption ? result.pastCaption.value : '';
+          record.pastImage = { file: filename, caption: captionText };
+        }
+      }
+
+      if ('interiorImage' in result) {
+        if (!record.interiorImage) { 
+          let filename = extractImageFilename(result.interiorImage);
+          let captionText = result.interiorCaption ? result.interiorCaption.value : '';
+          record.interiorImage = { file: filename, caption: captionText };
+        }
+      }
+      
+      if ('commonsCat' in result) {
+        record.commonsCat = result.commonsCat.value;
+      }
+    },
+    function() {
+      renderHistoricalImagesInPanel(qid);
+    }
+    ).catch(error => {
+    console.warn("Gagal menarik foto arsip (offline).", error);
+    let record = Records[qid];
+    record._gagalOffline = true; 
+    
+    if (record.panelElem) {
+      let arsipContainer = record.panelElem.querySelector(`#arsip-container-${qid}`);
+      if (arsipContainer) arsipContainer.remove(); 
+    }
+  });
+}
+
 function renderHistoricalImagesInPanel(qid) {
   let record = Records[qid];
   if (!record.panelElem) return;
